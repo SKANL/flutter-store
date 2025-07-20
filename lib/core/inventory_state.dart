@@ -12,6 +12,7 @@ class InventoryState extends ChangeNotifier {
   String? _error;
   String _searchQuery = '';
   String? _selectedCategory;
+  bool _suppressNotifications = false; // Para evitar notificaciones durante inicialización
 
   // Getters
   List<Product> get products => _products;
@@ -112,13 +113,10 @@ class InventoryState extends ChangeNotifier {
       final products = await ApiService.getAllProducts();
       _products = products;
       print('📦 [STATE] ${products.length} productos cargados'); // Debug log
-      // Solo notificar una vez que todo esté listo
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        notifyListeners();
-      });
     } catch (e) {
       print('❌ [STATE] Error cargando productos: $e'); // Debug log
       _setError('Error al cargar productos: ${e.toString()}');
+      rethrow;
     } finally {
       _setLoading(false);
     }
@@ -130,13 +128,10 @@ class InventoryState extends ChangeNotifier {
       final categorias = await ApiService.getCategorias();
       _categorias = categorias;
       print('📂 [STATE] ${categorias.length} categorías cargadas'); // Debug log
-      // Solo notificar una vez que todo esté listo
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        notifyListeners();
-      });
     } catch (e) {
       print('❌ [STATE] Error cargando categorías: $e'); // Debug log
       _setError('Error al cargar categorías: ${e.toString()}');
+      rethrow;
     }
   }
 
@@ -146,13 +141,10 @@ class InventoryState extends ChangeNotifier {
       final proveedores = await ApiService.getProveedores();
       _proveedores = proveedores;
       print('🏪 [STATE] ${proveedores.length} proveedores cargados'); // Debug log
-      // Solo notificar una vez que todo esté listo
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        notifyListeners();
-      });
     } catch (e) {
       print('❌ [STATE] Error cargando proveedores: $e'); // Debug log
       _setError('Error al cargar proveedores: ${e.toString()}');
+      rethrow;
     }
   }
 
@@ -230,32 +222,39 @@ class InventoryState extends ChangeNotifier {
     await loadProducts();
   }
 
+  // Método para notificar listeners externamente después de inicialización
+  void notifyAfterInit() {
+    notifyListeners();
+  }
+
+  // Método para deshabilitar notificaciones temporalmente durante inicialización
+  void setSuppressNotifications(bool suppress) {
+    _suppressNotifications = suppress;
+  }
+
   // Métodos auxiliares privados
   void _setLoading(bool loading) {
     if (_isLoading != loading) {
       _isLoading = loading;
-      // Usar SchedulerBinding para evitar llamadas durante build
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_suppressNotifications) {
         notifyListeners();
-      });
+      }
     }
   }
 
   void _setError(String error) {
     _error = error;
-    // Usar SchedulerBinding para evitar llamadas durante build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!_suppressNotifications) {
       notifyListeners();
-    });
+    }
   }
 
   void _clearError() {
     if (_error != null) {
       _error = null;
-      // Usar SchedulerBinding para evitar llamadas durante build
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_suppressNotifications) {
         notifyListeners();
-      });
+      }
     }
   }
 }

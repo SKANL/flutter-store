@@ -58,17 +58,23 @@ class _AppInitializerState extends State<AppInitializer> {
     try {
       print('🚀 [INIT] Inicializando aplicación...'); // Debug log
       
+      // Deshabilitar notificaciones durante la inicialización
+      widget.inventoryState.setSuppressNotifications(true);
+      
       // Cargar datos en paralelo para mejor rendimiento
-      final futures = [
+      // Sin notificar durante la carga para evitar múltiples rebuilds
+      print('⏳ [INIT] Ejecutando cargas en paralelo...'); // Debug log
+      await Future.wait([
         widget.inventoryState.loadCategorias(),
         widget.inventoryState.loadProveedores(),
         widget.inventoryState.loadProducts(),
-      ];
-      
-      print('⏳ [INIT] Ejecutando cargas en paralelo...'); // Debug log
-      await Future.wait(futures);
+      ]);
       
       print('✅ [INIT] Todas las cargas completadas exitosamente'); // Debug log
+      
+      // Rehabilitar notificaciones y notificar una sola vez
+      widget.inventoryState.setSuppressNotifications(false);
+      widget.inventoryState.notifyAfterInit();
       
       if (mounted) {
         setState(() {
@@ -77,6 +83,9 @@ class _AppInitializerState extends State<AppInitializer> {
       }
     } catch (e) {
       print('❌ [INIT] Error durante la inicialización: $e'); // Debug log
+      
+      // Rehabilitar notificaciones en caso de error
+      widget.inventoryState.setSuppressNotifications(false);
       if (mounted) {
         setState(() {
           _initError = 'Error al conectar con el servidor: ${e.toString()}';
