@@ -73,137 +73,140 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Estadísticas rápidas
-          InventoryBuilder(
-            builder: (context, state) {
-              return Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Productos',
-                      '${state.totalProducts}',
-                      Icons.inventory_2,
-                      AppColors.primary,
+    return Padding(
+      padding: const EdgeInsets.only(top: 25.0, left: 10, right: 10),
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Estadísticas rápidas
+            InventoryBuilder(
+              builder: (context, state) {
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        'Productos',
+                        '${state.totalProducts}',
+                        Icons.inventory_2,
+                        AppColors.primary,
+                      ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Valor Total',
+                        '\$${state.totalInventoryValue.toStringAsFixed(2)}',
+                        Icons.attach_money,
+                        Colors.green,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Stock Bajo',
+                        '${state.lowStockProducts.length}',
+                        Icons.warning,
+                        state.lowStockProducts.isNotEmpty ? Colors.red : Colors.grey,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Barra de búsqueda y filtros
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar productos...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                final state = InventoryProvider.of(context);
+                                state?.setSearchQuery('');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: AppColors.backgroundComponent,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      final state = InventoryProvider.of(context);
+                      state?.setSearchQuery(value);
+                    },
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Valor Total',
-                      '\$${state.totalInventoryValue.toStringAsFixed(2)}',
-                      Icons.attach_money,
-                      Colors.green,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Stock Bajo',
-                      '${state.lowStockProducts.length}',
-                      Icons.warning,
-                      state.lowStockProducts.isNotEmpty ? Colors.red : Colors.grey,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Barra de búsqueda y filtros
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Buscar productos...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              final state = InventoryProvider.of(context);
-                              state?.setSearchQuery('');
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: AppColors.backgroundComponent,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  onChanged: (value) {
-                    final state = InventoryProvider.of(context);
-                    state?.setSearchQuery(value);
+                ),
+                const SizedBox(width: 12),
+                // Botón de filtros por categoría
+                InventoryBuilder(
+                  builder: (context, state) {
+                    return PopupMenuButton<String?>(
+                      icon: const Icon(Icons.filter_list),
+                      tooltip: 'Filtrar por categoría',
+                      onSelected: (category) {
+                        state.setSelectedCategory(category);
+                      },
+                      itemBuilder: (context) {
+                        return [
+                          const PopupMenuItem<String?>(
+                            value: null,
+                            child: Text('Todas las categorías'),
+                          ),
+                          ...state.categories.map((category) {
+                            return PopupMenuItem<String>(
+                              value: category,
+                              child: Text(category),
+                            );
+                          }),
+                        ];
+                      },
+                    );
                   },
                 ),
-              ),
-              const SizedBox(width: 12),
-              // Botón de filtros por categoría
-              InventoryBuilder(
-                builder: (context, state) {
-                  return PopupMenuButton<String?>(
-                    icon: const Icon(Icons.filter_list),
-                    tooltip: 'Filtrar por categoría',
-                    onSelected: (category) {
-                      state.setSelectedCategory(category);
-                    },
-                    itemBuilder: (context) {
-                      return [
-                        const PopupMenuItem<String?>(
-                          value: null,
-                          child: Text('Todas las categorías'),
+              ],
+            ),
+            
+            // Categoría seleccionada
+            InventoryBuilder(
+              builder: (context, state) {
+                if (state.selectedCategory != null) {
+                  return Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      children: [
+                        Chip(
+                          label: Text('Categoría: ${state.selectedCategory}'),
+                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          deleteIcon: const Icon(Icons.close, size: 18),
+                          onDeleted: () => state.setSelectedCategory(null),
                         ),
-                        ...state.categories.map((category) {
-                          return PopupMenuItem<String>(
-                            value: category,
-                            child: Text(category),
-                          );
-                        }),
-                      ];
-                    },
+                      ],
+                    ),
                   );
-                },
-              ),
-            ],
-          ),
-          
-          // Categoría seleccionada
-          InventoryBuilder(
-            builder: (context, state) {
-              if (state.selectedCategory != null) {
-                return Container(
-                  margin: const EdgeInsets.only(top: 8),
-                  child: Row(
-                    children: [
-                      Chip(
-                        label: Text('Categoría: ${state.selectedCategory}'),
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
-                        deleteIcon: const Icon(Icons.close, size: 18),
-                        onDeleted: () => state.setSelectedCategory(null),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
