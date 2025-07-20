@@ -5,6 +5,7 @@ import 'package:store_manager/screens/store_add_product_screen.dart';
 import 'package:store_manager/screens/store_sales_profit_screen.dart';
 import 'package:store_manager/screens/store_register_sale_screen.dart';
 import '../components/bottom_navigation_bar.dart';
+import '../components/floating_add_button.dart';
 
 class StoreDashboardScreen extends StatefulWidget {
   const StoreDashboardScreen({super.key});
@@ -40,6 +41,18 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
           });
         },
       ),
+      floatingActionButton: _currentIndex == 1 // Solo mostrar en inventario
+          ? FloatingAddButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const StoreAddProductScreen(),
+                  ),
+                );
+              },
+              tooltip: 'Agregar Producto',
+            )
+          : null,
     );
   }
 }

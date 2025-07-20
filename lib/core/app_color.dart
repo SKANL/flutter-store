@@ -12,4 +12,20 @@ class AppColors {
 
   //Text colors
   static const Color text = Color(0xff212121);
+  
+  // Status colors
+  static const Color success = Color(0xff4CAF50);
+  static const Color warning = Color(0xffFF9800);
+  static const Color error = Color(0xffF44336);
+  static const Color info = Color(0xff2196F3);
+  
+  // Product status colors
+  static const Color statusGood = Color(0xff4CAF50);
+  static const Color statusWarning = Color(0xffFF9800);
+  static const Color statusExpired = Color(0xffF44336);
+  
+  // Inventory colors
+  static const Color lowStock = Color(0xffF44336);
+  static const Color normalStock = Color(0xff4CAF50);
+  static const Color highStock = Color(0xff2196F3);
 }

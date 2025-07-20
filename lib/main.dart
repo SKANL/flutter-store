@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:store_manager/core/app_theme.dart';
+import 'package:store_manager/core/inventory_state.dart';
 import 'package:store_manager/screens/store_dashboard_screen.dart';
 
 void main() {
@@ -11,11 +12,14 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Store Manager',
-      theme: AppTheme.lightTheme,
-      home: const StoreDashboardScreen(),
-      debugShowCheckedModeBanner: false,
+    return InventoryProvider(
+      notifier: InventoryState(),
+      child: MaterialApp(
+        title: 'Store Manager',
+        theme: AppTheme.lightTheme,
+        home: const StoreDashboardScreen(),
+        debugShowCheckedModeBanner: false,
+      ),
     );
   }
 }
