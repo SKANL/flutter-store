@@ -1,7 +1,6 @@
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import '../core/app_logger.dart';
-import '../services/safe_context_service.dart';
 
 class CameraPermissionService {
   /// Solicita permisos de cámara
@@ -168,11 +167,14 @@ class CameraPermissionService {
 
     // Verificar si está denegado permanentemente
     if (await isCameraPermissionPermanentlyDenied()) {
-      await showPermanentlyDeniedDialog(context);
+      if (context.mounted) {
+        await showPermanentlyDeniedDialog(context);
+      }
       return false;
     }
 
     // Mostrar diálogo explicativo antes de solicitar
+    if (!context.mounted) return false;
     final shouldRequest = await showPermissionDialog(context);
     if (!shouldRequest) {
       return false;

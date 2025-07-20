@@ -22,7 +22,7 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
       setState(() {
         _currentIndex = index;
       });
-    }), // Dashboard
+    },), // Dashboard
     const StoreInventoryScreen(), // Inventory
     const StoreAddProductScreen(), // Add Product
     const StoreSalesProfitScreen(), // Sales
@@ -53,12 +53,14 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
                 if (result == true) {
                   print('✅ [NAV] Producto guardado desde dashboard, recargando...');
                   // Aquí podrías recargar el inventario si es necesario
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Producto agregado exitosamente'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Producto agregado exitosamente'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
                 }
               },
               tooltip: 'Agregar Producto',

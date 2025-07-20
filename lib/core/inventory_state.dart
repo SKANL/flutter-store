@@ -48,14 +48,14 @@ class InventoryState extends ChangeNotifier {
       filtered = filtered.where((product) =>
         product.nombre.toLowerCase().contains(query) ||
         product.categoryName.toLowerCase().contains(query) ||
-        (product.codigoDeBarra?.toLowerCase().contains(query) ?? false)
+        (product.codigoDeBarra?.toLowerCase().contains(query) ?? false),
       ).toList();
     }
 
     // Filtrar por categoría
     if (_selectedCategory != null && _selectedCategory!.isNotEmpty) {
       filtered = filtered.where((product) => 
-        product.categoryName == _selectedCategory
+        product.categoryName == _selectedCategory,
       ).toList();
     }
 
@@ -84,14 +84,14 @@ class InventoryState extends ChangeNotifier {
   // Productos próximos a caducar
   List<Product> get expiringProducts {
     return _products.where((product) => 
-      product.status == ProductStatus.expiringSoon
+      product.status == ProductStatus.expiringSoon,
     ).toList();
   }
 
   // Productos caducados
   List<Product> get expiredProducts {
     return _products.where((product) => 
-      product.status == ProductStatus.expired
+      product.status == ProductStatus.expired,
     ).toList();
   }
 

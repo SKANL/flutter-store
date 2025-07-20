@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_logger.dart';
 import '../services/safe_context_service.dart';
-import '../screens/store_dashboard_screen.dart';
 
 class NavigationService {
   static Future<bool> safeNavigateBack(BuildContext context) async {

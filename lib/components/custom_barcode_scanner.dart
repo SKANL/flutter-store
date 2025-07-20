@@ -51,7 +51,7 @@ class _CustomBarcodeScannerState extends State<CustomBarcodeScanner>
     ).animate(CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOut,
-    ));
+    ),);
   }
 
   @override
@@ -330,7 +330,7 @@ class _ScannerOverlayPainter extends CustomPainter {
 
     canvas.drawPath(
       overlayPath,
-      Paint()..color = Colors.black.withOpacity(0.7),
+      Paint()..color = Colors.black.withValues(alpha: 0.7),
     );
 
     // Draw frame border
@@ -404,7 +404,7 @@ class _ScannerOverlayPainter extends CustomPainter {
     final scanLineY = frameRect.top + 
         (frameRect.height * animation.value);
     final scanLinePaint = Paint()
-      ..color = borderColor.withOpacity(0.8)
+      ..color = borderColor.withValues(alpha: 0.8)
       ..strokeWidth = 2;
 
     canvas.drawLine(

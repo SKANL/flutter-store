@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../core/app_color.dart';
 import '../core/app_text_styles.dart';
 import '../core/inventory_state.dart';
@@ -268,15 +267,17 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
       print('✅ [UI] Venta procesada desde UI exitosamente');
       
       // Refrescar el inventario después de la venta exitosa
-      try {
-        final inventoryState = InventoryProvider.of(context);
-        if (inventoryState != null) {
-          await inventoryState.refreshProducts();
-          print('✅ [UI] Inventario actualizado después de la venta');
+      if (mounted) {
+        try {
+          final inventoryState = InventoryProvider.of(context);
+          if (inventoryState != null) {
+            await inventoryState.refreshProducts();
+            print('✅ [UI] Inventario actualizado después de la venta');
+          }
+        } catch (refreshError) {
+          print('⚠️ [UI] Error refrescando inventario: $refreshError');
+          // No fallar la venta por error de refresco
         }
-      } catch (refreshError) {
-        print('⚠️ [UI] Error refrescando inventario: $refreshError');
-        // No fallar la venta por error de refresco
       }
       
       // Mostrar confirmación
@@ -320,7 +321,7 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Colors.grey.withValues(alpha: 0.2),
                   spreadRadius: 1,
                   blurRadius: 5,
                 ),
@@ -387,9 +388,9 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
                     margin: const EdgeInsets.only(top: 8),
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
@@ -419,7 +420,7 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
                   final product = _searchResults[index];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Colors.orange.withOpacity(0.2),
+                      backgroundColor: Colors.orange.withValues(alpha: 0.2),
                       child: Text(
                         product.nombre.substring(0, 1).toUpperCase(),
                         style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
@@ -502,7 +503,7 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: Colors.grey.withValues(alpha: 0.2),
                     spreadRadius: 1,
                     blurRadius: 5,
                   ),
@@ -577,6 +578,8 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
       if (!hasPermission) {
         return;
       }
+
+      if (!mounted) return;
 
       // Abrir el escáner
       final result = await Navigator.of(context).push<String>(

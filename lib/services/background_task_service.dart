@@ -150,7 +150,7 @@ class BackgroundTaskService {
     try {
       AppLogger.debug(
         'Procesando lista en chunks: $operationName (${items.length} elementos, chunks de $chunkSize)',
-        'BACKGROUND'
+        'BACKGROUND',
       );
       
       for (int i = 0; i < items.length; i += chunkSize) {
@@ -159,7 +159,7 @@ class BackgroundTaskService {
         
         // Procesar chunk actual
         final chunkResults = await Future.wait(
-          chunk.map((item) => processor(item))
+          chunk.map((item) => processor(item)),
         );
         
         results.addAll(chunkResults);
@@ -170,8 +170,8 @@ class BackgroundTaskService {
         }
         
         AppLogger.debug(
-          'Chunk procesado: ${end}/${items.length} elementos',
-          'BACKGROUND'
+          'Chunk procesado: $end/${items.length} elementos',
+          'BACKGROUND',
         );
       }
       

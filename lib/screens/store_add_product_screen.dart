@@ -8,7 +8,6 @@ import '../models/proveedor.dart';
 import '../models/producto_caducidad.dart';
 import '../services/api_service.dart';
 import '../services/camera_permission_service.dart';
-import '../services/barcode_generator_service.dart';
 import '../components/custom_text_field.dart';
 import '../components/custom_barcode_scanner.dart';
 import '../components/barcode_display_widget.dart';
@@ -674,6 +673,8 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
         return;
       }
 
+      if (!mounted) return;
+
       // Mostrar opciones: escanear o generar
       final result = await showModalBottomSheet<String>(
         context: context,
@@ -742,7 +743,7 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
             
             const SizedBox(height: 8),
             
-            Text(
+            const Text(
               'Selecciona una opción para agregar el código',
               style: AppTextStyles.description,
               textAlign: TextAlign.center,
@@ -831,7 +832,7 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 24),
@@ -1044,7 +1045,7 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
           ProductoCaducidad(
             idProducto: 0, // Se actualizará en el servicio
             fechaCaducidad: _expiryDate!,
-          )
+          ),
         ] : [],
         createdAt: wasEditing ? widget.productToEdit!.createdAt : DateTime.now(),
       );

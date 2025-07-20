@@ -263,7 +263,7 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Intenta cambiar los filtros de búsqueda',
               style: AppTextStyles.description,
             ),
@@ -308,7 +308,7 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          Text(
+          const Text(
             'Agrega tu primer producto para comenzar',
             textAlign: TextAlign.center,
             style: AppTextStyles.description,
@@ -317,12 +317,13 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
           ElevatedButton.icon(
             onPressed: () async {
               // Navegar a pantalla de agregar producto y esperar resultado
+              if (!mounted) return;
               final result = await Navigator.of(context).push<bool>(
                 MaterialPageRoute(
                   builder: (context) => const StoreAddProductScreen(),
                 ),
               );
-              if (result == true) {
+              if (result == true && mounted) {
                 // Recargar lista e informar éxito
                 final state = InventoryProvider.of(context);
                 state?.loadProducts();
@@ -395,7 +396,7 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
         ),
       ),
     );
-    if (result == true) {
+    if (result == true && mounted) {
       // Recargar lista e informar actualización exitosa
       final state = InventoryProvider.of(context);
       state?.loadProducts();

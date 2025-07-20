@@ -13,10 +13,8 @@ class ApiService {
   // Cache estático para mejorar rendimiento
   static List<Categoria>? _categoriasCache;
   static List<Proveedor>? _proveedoresCache;
-  static List<ProductoCaducidad>? _caducidadesCache;
   static DateTime? _categoriasLastFetch;
   static DateTime? _proveedoresLastFetch;
-  static DateTime? _caducidadesLastFetch;
   
   // Duración del cache en minutos
   static const int _cacheDurationMinutes = 5;
@@ -25,10 +23,8 @@ class ApiService {
   static void clearCache() {
     _categoriasCache = null;
     _proveedoresCache = null;
-    _caducidadesCache = null;
     _categoriasLastFetch = null;
     _proveedoresLastFetch = null;
-    _caducidadesLastFetch = null;
   }
   
   static bool _isCacheValid(DateTime? lastFetch) {
@@ -71,7 +67,7 @@ class ApiService {
       final response = await http
           .get(
             Uri.parse(url), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -102,7 +98,7 @@ class ApiService {
       final response = await http
           .get(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.categoriaById(id)}'), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -165,7 +161,7 @@ class ApiService {
       final response = await http
           .delete(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.categoriaById(id)}'), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -195,7 +191,7 @@ class ApiService {
       final response = await http
           .get(
             Uri.parse(url), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -226,7 +222,7 @@ class ApiService {
       final response = await http
           .get(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.proveedorById(id)}'), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -250,7 +246,7 @@ class ApiService {
       final response = await http
           .get(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.productos}'), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -274,7 +270,7 @@ class ApiService {
       final response = await http
           .get(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.productoById(id)}'), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -369,7 +365,7 @@ class ApiService {
       final response = await http
           .delete(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.productoById(id)}'), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -390,7 +386,7 @@ class ApiService {
       final response = await http
           .get(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.productoCaducidad}'), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -440,7 +436,7 @@ class ApiService {
       final response = await http
           .delete(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.productoCaducidadById(id)}'), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -498,7 +494,7 @@ class ApiService {
           categoria: categoria,
           proveedor: proveedor,
           caducidades: caducidades,
-        ));
+        ),);
       }
 
       return enrichedProducts;
@@ -525,7 +521,7 @@ class ApiService {
         await createProductoCaducidad(ProductoCaducidad(
           idProducto: idProducto,
           fechaCaducidad: caducidad.fechaCaducidad,
-        ));
+        ),);
       }
     } catch (e) {
       // No fallar si hay problema con caducidades - Log para debugging
@@ -543,7 +539,7 @@ class ApiService {
     return products.where((product) =>
       product.nombre.toLowerCase().contains(lowercaseQuery) ||
       product.categoryName.toLowerCase().contains(lowercaseQuery) ||
-      (product.codigoDeBarra?.toLowerCase().contains(lowercaseQuery) ?? false)
+      (product.codigoDeBarra?.toLowerCase().contains(lowercaseQuery) ?? false),
     ).toList();
   }
 
@@ -560,7 +556,7 @@ class ApiService {
   static Future<List<Product>> getExpiringProducts() async {
     final products = await getAllProducts();
     return products.where((product) => 
-      product.status == ProductStatus.expiringSoon
+      product.status == ProductStatus.expiringSoon,
     ).toList();
   }
 
@@ -584,7 +580,7 @@ class ApiService {
       final response = await http
           .get(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.ventas}'), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -605,7 +601,7 @@ class ApiService {
       final response = await http
           .get(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.ventaById(id)}'), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -650,7 +646,7 @@ class ApiService {
       final response = await http
           .get(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.detallesVenta}?idVenta=$idVenta'), 
-            headers: _headers
+            headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
@@ -700,7 +696,7 @@ class ApiService {
         final response = await http
             .get(
               Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.productos}?codigoBarras=${Uri.encodeComponent(barcode)}'), 
-              headers: _headers
+              headers: _headers,
             )
             .timeout(ApiConfig.timeout);
 

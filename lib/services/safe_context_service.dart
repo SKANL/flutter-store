@@ -14,7 +14,7 @@ class SafeContextService {
     if (!context.mounted) {
       AppLogger.warning(
         'Context no válido para operación: ${operationName ?? 'desconocida'}',
-        'SAFE_CONTEXT'
+        'SAFE_CONTEXT',
       );
       return null;
     }
@@ -26,7 +26,7 @@ class SafeContextService {
       if (!context.mounted) {
         AppLogger.warning(
           'Context perdido durante operación: ${operationName ?? 'desconocida'}',
-          'SAFE_CONTEXT'
+          'SAFE_CONTEXT',
         );
         return null;
       }
@@ -37,7 +37,7 @@ class SafeContextService {
         'Error durante operación: ${operationName ?? 'desconocida'}',
         'SAFE_CONTEXT',
         e,
-        stackTrace
+        stackTrace,
       );
       return null;
     }
@@ -80,7 +80,7 @@ class SafeContextService {
     if (!context.mounted) {
       AppLogger.warning(
         'Context no válido para navegación a: ${routeName ?? destination.toString()}',
-        'SAFE_CONTEXT'
+        'SAFE_CONTEXT',
       );
       return null;
     }
@@ -99,7 +99,7 @@ class SafeContextService {
       AppLogger.error(
         'Error durante navegación a: ${routeName ?? destination.toString()}',
         'SAFE_CONTEXT',
-        e
+        e,
       );
       return null;
     }
@@ -116,7 +116,7 @@ class SafeContextService {
     if (!context.mounted) {
       AppLogger.warning(
         'Context no válido para navegación a ruta: $routeName',
-        'SAFE_CONTEXT'
+        'SAFE_CONTEXT',
       );
       return null;
     }
@@ -143,7 +143,7 @@ class SafeContextService {
       AppLogger.error(
         'Error durante navegación a ruta: $routeName',
         'SAFE_CONTEXT',
-        e
+        e,
       );
       return null;
     }
@@ -202,7 +202,7 @@ class SafeContextService {
     if (!context.mounted) {
       AppLogger.warning(
         'Context no válido para PostFrame: ${operationName ?? 'desconocida'}',
-        'SAFE_CONTEXT'
+        'SAFE_CONTEXT',
       );
       return;
     }
@@ -215,13 +215,13 @@ class SafeContextService {
           AppLogger.error(
             'Error en PostFrame: ${operationName ?? 'desconocida'}',
             'SAFE_CONTEXT',
-            e
+            e,
           );
         }
       } else {
         AppLogger.warning(
           'Context perdido durante PostFrame: ${operationName ?? 'desconocida'}',
-          'SAFE_CONTEXT'
+          'SAFE_CONTEXT',
         );
       }
     });

@@ -126,7 +126,7 @@ class BarcodeService {
       
       final duplicates = products.where((p) => 
         p.codigoDeBarra == barcode && 
-        (excludeId == null || p.idProducto != excludeId)
+        (excludeId == null || p.idProducto != excludeId),
       ).toList();
       
       final isDuplicate = duplicates.isNotEmpty;
