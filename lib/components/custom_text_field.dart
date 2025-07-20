@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/app_color.dart';
 import '../core/app_text_styles.dart';
 
@@ -12,6 +13,8 @@ class CustomTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final void Function(String?)? onSaved;
   final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
+  final List<TextInputFormatter>? inputFormatters;
   final int? maxLines;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
@@ -29,6 +32,8 @@ class CustomTextField extends StatelessWidget {
     this.validator,
     this.onSaved,
     this.onChanged,
+    this.onSubmitted,
+    this.inputFormatters,
     this.maxLines = 1,
     this.prefixIcon,
     this.suffixIcon,
@@ -65,8 +70,10 @@ class CustomTextField extends StatelessWidget {
           obscureText: isPassword,
           enabled: enabled,
           maxLines: maxLines,
+          inputFormatters: inputFormatters,
           onChanged: onChanged,
           onSaved: onSaved,
+          onFieldSubmitted: onSubmitted,
           validator: validator ??
               (isRequired
                   ? (value) {

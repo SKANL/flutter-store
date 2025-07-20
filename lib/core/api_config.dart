@@ -49,6 +49,7 @@ class ApiEndpoints {
   
   // Ventas
   static const String ventas = '/api/ventas';
+  static const String ventasWithDetails = '/api/ventas/with-details';
   static String ventaById(int id) => '/api/ventas/$id';
   
   // Detalles de Venta
