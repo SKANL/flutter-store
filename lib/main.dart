@@ -45,8 +45,6 @@ class AppInitializer extends StatefulWidget {
 }
 
 class _AppInitializerState extends State<AppInitializer> {
-  bool _isInitializing = true;
-  String? _initError;
 
   @override
   void initState() {
@@ -55,89 +53,39 @@ class _AppInitializerState extends State<AppInitializer> {
   }
 
   Future<void> _initializeApp() async {
+    // Mostrar UI inmediatamente sin bloquear
+    // La carga se hace en background completamente
+
+    // Cargar datos en background sin bloquear el UI
     try {
-      // Usar el método optimizado del InventoryState
-      await widget.inventoryState.initializeData();
-      
-      if (mounted) {
-        setState(() {
-          _isInitializing = false;
-        });
-      }
+      // Usar microtask para no bloquear el hilo principal
+      await Future.microtask(() async {
+        await widget.inventoryState.initializeData();
+      });
     } catch (e) {
-      print('❌ [INIT] Error durante la inicialización: $e'); // Debug log
+      print('❌ [INIT] Error durante la carga en background: $e'); // Debug log
       
       if (mounted) {
-        setState(() {
-          _initError = 'Error al conectar con el servidor: ${e.toString()}';
-          _isInitializing = false;
-        });
+        // Mostrar snackbar con error pero mantener la UI funcional
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error de conexión: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Reintentar',
+              onPressed: _initializeApp,
+            ),
+          ),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isInitializing) {
-      return const Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text(
-                'Cargando datos...',
-                style: TextStyle(fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    
-    if (_initError != null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Error de Conexión',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  _initError!,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _isInitializing = true;
-                    _initError = null;
-                  });
-                  _initializeApp();
-                },
-                child: const Text('Reintentar'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    
+    // Siempre mostrar StoreDashboardScreen directamente
+    // Los datos se cargan en background sin bloquear UI
     return const StoreDashboardScreen();
   }
 }

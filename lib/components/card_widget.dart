@@ -7,6 +7,7 @@ class CardWidget extends StatelessWidget {
   final Color color;
   final Color textColor;
   final VoidCallback onTap;
+  final bool isLoading;
 
   const CardWidget({
     super.key,
@@ -15,6 +16,7 @@ class CardWidget extends StatelessWidget {
     required this.color,
     required this.textColor,
     required this.onTap,
+    this.isLoading = false,
   });
 
   @override
@@ -41,14 +43,23 @@ class CardWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8.0),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 20.0, // Mantener tamaño para el valor
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                ),
-              ),
+              isLoading
+                ? SizedBox(
+                    height: 20.0,
+                    width: 20.0,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.0,
+                      valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                    ),
+                  )
+                : Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 20.0, // Mantener tamaño para el valor
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
             ],
           ),
         ),

@@ -255,7 +255,7 @@ class InventoryState extends ChangeNotifier {
     await loadProducts();
   }
 
-  // Método optimizado para carga inicial en paralelo
+  // Método optimizado para carga inicial en paralelo con yield points
   Future<void> initializeData() async {
     print('🚀 [INIT] Inicializando aplicación...');
     setSuppressNotifications(true);
@@ -265,12 +265,15 @@ class InventoryState extends ChangeNotifier {
     try {
       print('⏳ [INIT] Ejecutando cargas en paralelo...');
       
-      // Ejecutar cargas en paralelo para mejorar el rendimiento
-      await Future.wait([
-        loadCategorias(),
-        loadProveedores(),
-        loadProducts(),
-      ]);
+      // Dividir la carga en chunks para dar tiempo al hilo principal
+      final List<Future<void>> loadTasks = [
+        _loadWithYield(loadCategorias),
+        _loadWithYield(loadProveedores),
+        _loadWithYield(loadProducts),
+      ];
+      
+      // Ejecutar en paralelo pero con yield points
+      await Future.wait(loadTasks);
 
       print('✅ [INIT] Todas las cargas completadas exitosamente');
     } catch (e) {
@@ -279,8 +282,17 @@ class InventoryState extends ChangeNotifier {
     } finally {
       setSuppressNotifications(false);
       _setLoading(false);
+      // Yield antes de notificar para evitar bloqueos
+      await Future.microtask(() {});
       notifyListeners();
     }
+  }
+
+  // Helper para añadir yield points durante las cargas
+  Future<void> _loadWithYield(Future<void> Function() loadFunction) async {
+    await Future.microtask(() {});  // Yield point antes
+    await loadFunction();
+    await Future.microtask(() {});  // Yield point después
   }
 
   // Método para notificar listeners externamente después de inicialización
