@@ -1,37 +1,63 @@
+import 'categoria.dart';
+import 'proveedor.dart';
+import 'producto_caducidad.dart';
+
 class Product {
-  final String? id;
-  final String name;
-  final String category;
-  final String? barcode;
-  final int stock;
-  final int minStock;
-  final double costPrice;
-  final double salePrice;
-  final DateTime? expiryDate;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final int? idProducto;
+  final String nombre;
+  final String? codigoDeBarra;
+  final double precioCosto;
+  final double precioVenta;
+  final int stockActual;
+  final int stockMinimo;
+  final int idCategoria;
+  final int? idProveedor;
+  
+  // Campos relacionados (no se envían en el JSON, se obtienen por joins)
+  final Categoria? categoria;
+  final Proveedor? proveedor;
+  final List<ProductoCaducidad> caducidades;
+  
+  // Campos calculados localmente
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   Product({
-    this.id,
-    required this.name,
-    required this.category,
-    this.barcode,
-    required this.stock,
-    this.minStock = 5,
-    required this.costPrice,
-    required this.salePrice,
-    this.expiryDate,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+    this.idProducto,
+    required this.nombre,
+    this.codigoDeBarra,
+    required this.precioCosto,
+    required this.precioVenta,
+    required this.stockActual,
+    this.stockMinimo = 5,
+    required this.idCategoria,
+    this.idProveedor,
+    this.categoria,
+    this.proveedor,
+    this.caducidades = const [],
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  // Obtiene la fecha de caducidad más próxima
+  DateTime? get fechaCaducidad {
+    if (caducidades.isEmpty) return null;
+    
+    final fechasOrdenadas = caducidades
+        .map((c) => c.fechaCaducidad)
+        .toList()
+      ..sort();
+    
+    return fechasOrdenadas.first;
+  }
 
   // Calcula el estado de caducidad automáticamente
   ProductStatus get status {
-    if (expiryDate == null) return ProductStatus.notExpiring;
+    final caducidad = fechaCaducidad;
+    if (caducidad == null) return ProductStatus.notExpiring;
     
     final now = DateTime.now();
-    final daysToExpire = expiryDate!.difference(now).inDays;
+    final daysToExpire = caducidad.difference(now).inDays;
     
     if (daysToExpire < 0) return ProductStatus.expired;
     if (daysToExpire <= 30) return ProductStatus.expiringSoon;
@@ -61,96 +87,119 @@ class Product {
     }
   }
 
+  // Obtiene el nombre de la categoría
+  String get categoryName => categoria?.nombre ?? 'Sin categoría';
+
+  // Obtiene el nombre del proveedor
+  String get providerName => proveedor?.nombre ?? '';
+
   // Calcula la ganancia por unidad
-  double get profitPerUnit => salePrice - costPrice;
+  double get profitPerUnit => precioVenta - precioCosto;
 
   // Calcula la ganancia total del stock
-  double get totalProfit => profitPerUnit * stock;
+  double get totalProfit => profitPerUnit * stockActual;
 
   // Calcula el valor total del inventario
-  double get totalInventoryValue => costPrice * stock;
+  double get totalInventoryValue => precioCosto * stockActual;
 
   // Verifica si el stock está bajo
-  bool get isLowStock => stock <= minStock;
+  bool get isLowStock => stockActual <= stockMinimo;
 
   // Crea una copia con campos modificados
   Product copyWith({
-    String? id,
-    String? name,
-    String? category,
-    String? barcode,
-    int? stock,
-    int? minStock,
-    double? costPrice,
-    double? salePrice,
-    DateTime? expiryDate,
+    int? idProducto,
+    String? nombre,
+    String? codigoDeBarra,
+    double? precioCosto,
+    double? precioVenta,
+    int? stockActual,
+    int? stockMinimo,
+    int? idCategoria,
+    int? idProveedor,
+    Categoria? categoria,
+    Proveedor? proveedor,
+    List<ProductoCaducidad>? caducidades,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return Product(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      category: category ?? this.category,
-      barcode: barcode ?? this.barcode,
-      stock: stock ?? this.stock,
-      minStock: minStock ?? this.minStock,
-      costPrice: costPrice ?? this.costPrice,
-      salePrice: salePrice ?? this.salePrice,
-      expiryDate: expiryDate ?? this.expiryDate,
+      idProducto: idProducto ?? this.idProducto,
+      nombre: nombre ?? this.nombre,
+      codigoDeBarra: codigoDeBarra ?? this.codigoDeBarra,
+      precioCosto: precioCosto ?? this.precioCosto,
+      precioVenta: precioVenta ?? this.precioVenta,
+      stockActual: stockActual ?? this.stockActual,
+      stockMinimo: stockMinimo ?? this.stockMinimo,
+      idCategoria: idCategoria ?? this.idCategoria,
+      idProveedor: idProveedor ?? this.idProveedor,
+      categoria: categoria ?? this.categoria,
+      proveedor: proveedor ?? this.proveedor,
+      caducidades: caducidades ?? this.caducidades,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
   }
 
-  // Convierte a Map para enviar a la API
+  // Convierte a Map para enviar a la API (solo campos del modelo de BD)
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'name': name,
-      'category': category,
-      'barcode': barcode,
-      'stock': stock,
-      'minStock': minStock,
-      'costPrice': costPrice,
-      'salePrice': salePrice,
-      'expiryDate': expiryDate?.toIso8601String(),
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      if (idProducto != null) 'idProducto': idProducto,
+      'nombre': nombre,
+      if (codigoDeBarra != null) 'codigoDeBarra': codigoDeBarra,
+      'precioCosto': precioCosto,
+      'precioVenta': precioVenta,
+      'stockActual': stockActual,
+      'stockMinimo': stockMinimo,
+      'idCategoria': idCategoria,
+      if (idProveedor != null) 'idProveedor': idProveedor,
     };
   }
 
   // Crea desde Map recibido de la API
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      id: json['id'],
-      name: json['name'],
-      category: json['category'],
-      barcode: json['barcode'],
-      stock: json['stock'],
-      minStock: json['minStock'] ?? 5,
-      costPrice: json['costPrice'].toDouble(),
-      salePrice: json['salePrice'].toDouble(),
-      expiryDate: json['expiryDate'] != null
-          ? DateTime.parse(json['expiryDate'])
+      idProducto: json['idProducto'],
+      nombre: json['nombre'],
+      codigoDeBarra: json['codigoDeBarra'],
+      precioCosto: (json['precioCosto'] as num).toDouble(),
+      precioVenta: (json['precioVenta'] as num).toDouble(),
+      stockActual: json['stockActual'],
+      stockMinimo: json['stockMinimo'] ?? 5,
+      idCategoria: json['idCategoria'],
+      idProveedor: json['idProveedor'],
+      categoria: json['categoria'] != null 
+          ? Categoria.fromJson(json['categoria']) 
           : null,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      proveedor: json['proveedor'] != null 
+          ? Proveedor.fromJson(json['proveedor']) 
+          : null,
+      caducidades: json['caducidades'] != null
+          ? (json['caducidades'] as List)
+              .map((c) => ProductoCaducidad.fromJson(c))
+              .toList()
+          : [],
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
     );
   }
 
   @override
   String toString() {
-    return 'Product(id: $id, name: $name, category: $category, stock: $stock)';
+    return 'Product(id: $idProducto, nombre: $nombre, categoria: $idCategoria, stock: $stockActual)';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Product && other.id == id;
+    return other is Product && other.idProducto == idProducto;
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => idProducto.hashCode;
 }
 
 enum ProductStatus {

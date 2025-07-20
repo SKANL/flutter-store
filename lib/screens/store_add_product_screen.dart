@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../core/app_color.dart';
 import '../core/app_text_styles.dart';
 import '../core/inventory_state.dart';
 import '../models/product.dart';
+import '../models/categoria.dart';
+import '../models/proveedor.dart';
+import '../models/producto_caducidad.dart';
+import '../services/api_service.dart';
 import '../components/custom_text_field.dart';
 
 class StoreAddProductScreen extends StatefulWidget {
@@ -21,7 +24,6 @@ class StoreAddProductScreen extends StatefulWidget {
 class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _categoryController = TextEditingController();
   final _barcodeController = TextEditingController();
   final _stockController = TextEditingController();
   final _minStockController = TextEditingController(text: '5');
@@ -30,45 +32,60 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
   
   DateTime? _expiryDate;
   bool _isLoading = false;
+  int? _selectedCategoryId;
+  int? _selectedProviderId;
   
-  // Lista de categorías predefinidas para sugerencias
-  final List<String> _predefinedCategories = [
-    'Lácteos',
-    'Bebidas',
-    'Limpieza',
-    'Panadería',
-    'Carnes',
-    'Frutas y Verduras',
-    'Conservas',
-    'Snacks',
-    'Higiene Personal',
-    'Otros',
-  ];
-
-  bool get _isEditing => widget.productToEdit != null;
+  // Listas cargadas de la API
+  List<Categoria> _categorias = [];
+  List<Proveedor> _proveedores = [];  bool get _isEditing => widget.productToEdit != null;
 
   @override
   void initState() {
     super.initState();
-    
-    // Si estamos editando, llenar los campos con los datos existentes
-    if (_isEditing) {
-      final product = widget.productToEdit!;
-      _nameController.text = product.name;
-      _categoryController.text = product.category;
-      _barcodeController.text = product.barcode ?? '';
-      _stockController.text = product.stock.toString();
-      _minStockController.text = product.minStock.toString();
-      _costPriceController.text = product.costPrice.toString();
-      _salePriceController.text = product.salePrice.toString();
-      _expiryDate = product.expiryDate;
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    try {
+      // Cargar categorías y proveedores de la API
+      final futures = await Future.wait([
+        ApiService.getCategorias(),
+        ApiService.getProveedores(),
+      ]);
+      
+      setState(() {
+        _categorias = futures[0] as List<Categoria>;
+        _proveedores = futures[1] as List<Proveedor>;
+      });
+      
+      // Si estamos editando, llenar los campos con los datos existentes
+      if (_isEditing) {
+        final product = widget.productToEdit!;
+        _nameController.text = product.nombre;
+        _barcodeController.text = product.codigoDeBarra ?? '';
+        _stockController.text = product.stockActual.toString();
+        _minStockController.text = product.stockMinimo.toString();
+        _costPriceController.text = product.precioCosto.toString();
+        _salePriceController.text = product.precioVenta.toString();
+        _expiryDate = product.fechaCaducidad;
+        _selectedCategoryId = product.idCategoria;
+        _selectedProviderId = product.idProveedor;
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error cargando datos: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _categoryController.dispose();
     _barcodeController.dispose();
     _stockController.dispose();
     _minStockController.dispose();
@@ -126,6 +143,10 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
                     const SizedBox(height: 16),
                     
                     _buildCategoryField(),
+                    
+                    const SizedBox(height: 16),
+                    
+                    _buildProviderField(),
                     
                     const SizedBox(height: 16),
                     
@@ -293,31 +314,125 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CustomTextField(
-          label: 'Categoría',
-          controller: _categoryController,
-          isRequired: true,
-          hintText: 'Selecciona o escribe una categoría',
-          prefixIcon: const Icon(Icons.category),
+        RichText(
+          text: TextSpan(
+            text: 'Categoría',
+            style: AppTextStyles.description.copyWith(
+              color: AppColors.text,
+              fontWeight: FontWeight.w500,
+            ),
+            children: const [
+              TextSpan(
+                text: ' *',
+                style: TextStyle(color: Colors.red),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 8),
-        // Chips de categorías sugeridas
-        Wrap(
-          spacing: 8,
-          runSpacing: 4,
-          children: _predefinedCategories
-              .where((cat) => !_categoryController.text.contains(cat))
-              .map((category) => ActionChip(
-                    label: Text(
-                      category,
-                      style: AppTextStyles.small,
-                    ),
-                    onPressed: () {
-                      _categoryController.text = category;
-                    },
-                    backgroundColor: AppColors.backgroundComponent,
-                  ))
-              .toList(),
+        DropdownButtonFormField<int>(
+          value: _selectedCategoryId,
+          decoration: InputDecoration(
+            hintText: 'Selecciona una categoría',
+            prefixIcon: const Icon(Icons.category),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red),
+            ),
+          ),
+          items: _categorias.map((categoria) {
+            return DropdownMenuItem<int>(
+              value: categoria.idCategoria,
+              child: Text(categoria.nombre),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedCategoryId = value;
+            });
+          },
+          validator: (value) {
+            if (value == null) {
+              return 'La categoría es obligatoria';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProviderField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Proveedor (Opcional)',
+          style: AppTextStyles.description.copyWith(
+            color: AppColors.text,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<int>(
+          value: _selectedProviderId,
+          decoration: InputDecoration(
+            hintText: 'Selecciona un proveedor',
+            prefixIcon: const Icon(Icons.business),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            ),
+          ),
+          items: [
+            const DropdownMenuItem<int>(
+              value: null,
+              child: Text('Sin proveedor'),
+            ),
+            ..._proveedores.map((proveedor) {
+              return DropdownMenuItem<int>(
+                value: proveedor.idProveedor,
+                child: Text(proveedor.nombre),
+              );
+            }),
+          ],
+          onChanged: (value) {
+            setState(() {
+              _selectedProviderId = value;
+            });
+          },
         ),
       ],
     );
@@ -342,9 +457,9 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: color.withOpacity(0.3)),
+                border: Border.all(color: color.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -514,23 +629,39 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
       return;
     }
 
+    if (_selectedCategoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debe seleccionar una categoría'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     _formKey.currentState!.save();
 
     setState(() => _isLoading = true);
 
     try {
       final product = Product(
-        id: _isEditing ? widget.productToEdit!.id : null,
-        name: _nameController.text.trim(),
-        category: _categoryController.text.trim(),
-        barcode: _barcodeController.text.trim().isEmpty 
+        idProducto: _isEditing ? widget.productToEdit!.idProducto : null,
+        nombre: _nameController.text.trim(),
+        codigoDeBarra: _barcodeController.text.trim().isEmpty 
             ? null 
             : _barcodeController.text.trim(),
-        stock: int.parse(_stockController.text.trim()),
-        minStock: int.parse(_minStockController.text.trim()),
-        costPrice: double.parse(_costPriceController.text.trim()),
-        salePrice: double.parse(_salePriceController.text.trim()),
-        expiryDate: _expiryDate,
+        precioCosto: double.parse(_costPriceController.text.trim()),
+        precioVenta: double.parse(_salePriceController.text.trim()),
+        stockActual: int.parse(_stockController.text.trim()),
+        stockMinimo: int.parse(_minStockController.text.trim()),
+        idCategoria: _selectedCategoryId!,
+        idProveedor: _selectedProviderId,
+        caducidades: _expiryDate != null ? [
+          ProductoCaducidad(
+            idProducto: 0, // Se actualizará en el servicio
+            fechaCaducidad: _expiryDate!,
+          )
+        ] : [],
         createdAt: _isEditing ? widget.productToEdit!.createdAt : DateTime.now(),
       );
 

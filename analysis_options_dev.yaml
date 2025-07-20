@@ -1,0 +1,6 @@
+analyzer:
+  exclude:
+    - test_api.dart  # Archivo de testing con prints para debugging
+  
+  errors:
+    avoid_print: ignore  # Solo para archivos de testing

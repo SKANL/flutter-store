@@ -7,11 +7,11 @@ class FloatingAddButton extends StatelessWidget {
   final IconData icon;
 
   const FloatingAddButton({
-    Key? key,
+    super.key,
     required this.onPressed,
     this.tooltip = 'Agregar',
     this.icon = Icons.add,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

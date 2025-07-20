@@ -19,7 +19,7 @@ class CustomTextField extends StatelessWidget {
   final TextEditingController? controller;
 
   const CustomTextField({
-    Key? key,
+    super.key,
     required this.label,
     this.hintText,
     this.initialValue,
@@ -34,7 +34,7 @@ class CustomTextField extends StatelessWidget {
     this.suffixIcon,
     this.enabled = true,
     this.controller,
-  }) : super(key: key);
+  }) : super();
 
   @override
   Widget build(BuildContext context) {

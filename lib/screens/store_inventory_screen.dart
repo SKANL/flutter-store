@@ -194,7 +194,7 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
                       children: [
                         Chip(
                           label: Text('Categoría: ${state.selectedCategory}'),
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                           deleteIcon: const Icon(Icons.close, size: 18),
                           onDeleted: () => state.setSelectedCategory(null),
                         ),
@@ -215,9 +215,9 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -389,7 +389,7 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Eliminar Producto'),
         content: Text(
-          '¿Estás seguro de que quieres eliminar "${product.name}"?',
+          '¿Estás seguro de que quieres eliminar "${product.nombre}"?',
         ),
         actions: [
           TextButton(
@@ -398,13 +398,15 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              navigator.pop();
               final state = InventoryProvider.of(context);
-              if (state != null && product.id != null) {
+              if (state != null && product.idProducto != null) {
                 try {
-                  await state.deleteProduct(product.id!);
+                  await state.deleteProduct(product.idProducto!);
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       const SnackBar(
                         content: Text('Producto eliminado exitosamente'),
                         backgroundColor: Colors.green,
@@ -413,7 +415,7 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
                   }
                 } catch (e) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(
                         content: Text('Error al eliminar: $e'),
                         backgroundColor: Colors.red,

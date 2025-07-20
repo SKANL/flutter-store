@@ -11,13 +11,13 @@ class ProductCard extends StatelessWidget {
   final bool showActions;
 
   const ProductCard({
-    Key? key,
+    super.key,
     required this.product,
     this.onTap,
     this.onEdit,
     this.onDelete,
     this.showActions = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +44,7 @@ class ProductCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          product.name,
+                          product.nombre,
                           style: AppTextStyles.title.copyWith(
                             fontSize: 18,
                             color: AppColors.text,
@@ -59,11 +59,11 @@ class ProductCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            product.category,
+                            product.categoryName,
                             style: AppTextStyles.small.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w500,
@@ -87,7 +87,7 @@ class ProductCard extends StatelessWidget {
                   Expanded(
                     child: _buildInfoItem(
                       'Stock',
-                      '${product.stock}',
+                      '${product.stockActual}',
                       product.isLowStock ? Colors.red : AppColors.text,
                       product.isLowStock ? Icons.warning : Icons.inventory_2,
                     ),
@@ -95,7 +95,7 @@ class ProductCard extends StatelessWidget {
                   Expanded(
                     child: _buildInfoItem(
                       'Precio',
-                      '\$${product.salePrice.toStringAsFixed(2)}',
+                      '\$${product.precioVenta.toStringAsFixed(2)}',
                       AppColors.text,
                       Icons.attach_money,
                     ),
@@ -111,7 +111,7 @@ class ProductCard extends StatelessWidget {
                 ],
               ),
               
-              if (product.barcode != null) ...[
+              if (product.codigoDeBarra != null) ...[
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -122,7 +122,7 @@ class ProductCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      product.barcode!,
+                      product.codigoDeBarra!,
                       style: AppTextStyles.small.copyWith(
                         color: Colors.grey.shade600,
                       ),
@@ -131,7 +131,7 @@ class ProductCard extends StatelessWidget {
                 ),
               ],
               
-              if (product.expiryDate != null) ...[
+              if (product.fechaCaducidad != null) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -142,7 +142,7 @@ class ProductCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Caduca: ${_formatDate(product.expiryDate!)}',
+                      'Caduca: ${_formatDate(product.fechaCaducidad!)}',
                       style: AppTextStyles.small.copyWith(
                         color: _getExpiryColor(),
                         fontWeight: FontWeight.w500,
@@ -194,15 +194,15 @@ class ProductCard extends StatelessWidget {
     
     switch (product.status) {
       case ProductStatus.expired:
-        backgroundColor = Colors.red.withOpacity(0.1);
+        backgroundColor = Colors.red.withValues(alpha: 0.1);
         textColor = Colors.red;
         break;
       case ProductStatus.expiringSoon:
-        backgroundColor = Colors.orange.withOpacity(0.1);
+        backgroundColor = Colors.orange.withValues(alpha: 0.1);
         textColor = Colors.orange;
         break;
       case ProductStatus.notExpiring:
-        backgroundColor = Colors.green.withOpacity(0.1);
+        backgroundColor = Colors.green.withValues(alpha: 0.1);
         textColor = Colors.green;
         break;
     }
