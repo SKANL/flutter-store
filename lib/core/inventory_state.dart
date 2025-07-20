@@ -23,9 +23,22 @@ class InventoryState extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   String? get selectedCategory => _selectedCategory;
 
-  // Productos filtrados
+  // Cache para productos filtrados
+  List<Product>? _filteredProductsCache;
+  String? _lastSearchQuery;
+  String? _lastSelectedCategory;
+
+  // Productos filtrados con cache para mejorar rendimiento
   List<Product> get filteredProducts {
-    List<Product> filtered = _products;
+    // Verificar si el cache es válido
+    if (_filteredProductsCache != null &&
+        _lastSearchQuery == _searchQuery &&
+        _lastSelectedCategory == _selectedCategory) {
+      return _filteredProductsCache!;
+    }
+
+    // Recalcular filtros
+    List<Product> filtered = List.from(_products);
 
     // Filtrar por búsqueda
     if (_searchQuery.isNotEmpty) {
@@ -43,6 +56,11 @@ class InventoryState extends ChangeNotifier {
         product.categoryName == _selectedCategory
       ).toList();
     }
+
+    // Guardar en cache
+    _filteredProductsCache = filtered;
+    _lastSearchQuery = _searchQuery;
+    _lastSelectedCategory = _selectedCategory;
 
     return filtered;
   }
@@ -88,19 +106,34 @@ class InventoryState extends ChangeNotifier {
 
   // Métodos para actualizar estado
   void setSearchQuery(String query) {
-    _searchQuery = query;
-    notifyListeners();
+    if (_searchQuery != query) {
+      _searchQuery = query;
+      _clearProductsCache();
+      notifyListeners();
+    }
   }
 
   void setSelectedCategory(String? category) {
-    _selectedCategory = category;
-    notifyListeners();
+    if (_selectedCategory != category) {
+      _selectedCategory = category;
+      _clearProductsCache();
+      notifyListeners();
+    }
   }
 
   void clearFilters() {
-    _searchQuery = '';
-    _selectedCategory = null;
-    notifyListeners();
+    if (_searchQuery.isNotEmpty || _selectedCategory != null) {
+      _searchQuery = '';
+      _selectedCategory = null;
+      _clearProductsCache();
+      notifyListeners();
+    }
+  }
+
+  void _clearProductsCache() {
+    _filteredProductsCache = null;
+    _lastSearchQuery = null;
+    _lastSelectedCategory = null;
   }
 
   // Métodos para interactuar con la API
@@ -220,6 +253,34 @@ class InventoryState extends ChangeNotifier {
 
   Future<void> refreshProducts() async {
     await loadProducts();
+  }
+
+  // Método optimizado para carga inicial en paralelo
+  Future<void> initializeData() async {
+    print('🚀 [INIT] Inicializando aplicación...');
+    setSuppressNotifications(true);
+    _setLoading(true);
+    _clearError();
+
+    try {
+      print('⏳ [INIT] Ejecutando cargas en paralelo...');
+      
+      // Ejecutar cargas en paralelo para mejorar el rendimiento
+      await Future.wait([
+        loadCategorias(),
+        loadProveedores(),
+        loadProducts(),
+      ]);
+
+      print('✅ [INIT] Todas las cargas completadas exitosamente');
+    } catch (e) {
+      print('❌ [INIT] Error durante inicialización: $e');
+      _setError('Error durante la carga inicial: ${e.toString()}');
+    } finally {
+      setSuppressNotifications(false);
+      _setLoading(false);
+      notifyListeners();
+    }
   }
 
   // Método para notificar listeners externamente después de inicialización
