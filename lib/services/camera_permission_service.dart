@@ -1,14 +1,19 @@
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
+import '../core/app_logger.dart';
+import '../services/safe_context_service.dart';
 
 class CameraPermissionService {
   /// Solicita permisos de cámara
   static Future<bool> requestCameraPermission() async {
     try {
+      AppLogger.debug('Solicitando permisos de cámara', 'CAMERA');
       final status = await Permission.camera.request();
-      return status.isGranted;
-    } catch (e) {
-      debugPrint('Error requesting camera permission: $e');
+      final granted = status.isGranted;
+      AppLogger.info('Permisos de cámara: ${granted ? 'otorgados' : 'denegados'}', 'CAMERA');
+      return granted;
+    } catch (e, stackTrace) {
+      AppLogger.error('Error solicitando permisos de cámara', 'CAMERA', e, stackTrace);
       return false;
     }
   }
@@ -19,7 +24,7 @@ class CameraPermissionService {
       final status = await Permission.camera.status;
       return status.isGranted;
     } catch (e) {
-      debugPrint('Error checking camera permission: $e');
+      AppLogger.error('Error verificando permisos de cámara', 'CAMERA', e);
       return false;
     }
   }

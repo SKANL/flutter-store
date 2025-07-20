@@ -3,6 +3,8 @@ import '../models/product.dart';
 import '../models/categoria.dart';
 import '../models/proveedor.dart';
 import '../services/api_service.dart';
+import '../core/app_logger.dart';
+import '../services/background_task_service.dart';
 
 class InventoryState extends ChangeNotifier {
   List<Product> _products = [];
@@ -142,12 +144,21 @@ class InventoryState extends ChangeNotifier {
     _clearError();
 
     try {
-      print('📦 [STATE] Cargando productos...'); // Debug log
-      final products = await ApiService.getAllProducts();
-      _products = products;
-      print('📦 [STATE] ${products.length} productos cargados'); // Debug log
-    } catch (e) {
-      print('❌ [STATE] Error cargando productos: $e'); // Debug log
+      AppLogger.debug('Cargando productos...', 'INVENTORY');
+      final products = await BackgroundTaskService.runAsyncWithYield(
+        () => ApiService.getAllProducts(),
+        taskName: 'loadProducts',
+      );
+      
+      if (products != null) {
+        _products = products;
+        AppLogger.info('${products.length} productos cargados', 'INVENTORY');
+      } else {
+        AppLogger.warning('No se pudieron cargar productos', 'INVENTORY');
+        _products = [];
+      }
+    } catch (e, stackTrace) {
+      AppLogger.error('Error cargando productos', 'INVENTORY', e, stackTrace);
       _setError('Error al cargar productos: ${e.toString()}');
       rethrow;
     } finally {
@@ -157,12 +168,21 @@ class InventoryState extends ChangeNotifier {
 
   Future<void> loadCategorias() async {
     try {
-      print('📂 [STATE] Cargando categorías...'); // Debug log
-      final categorias = await ApiService.getCategorias();
-      _categorias = categorias;
-      print('📂 [STATE] ${categorias.length} categorías cargadas'); // Debug log
-    } catch (e) {
-      print('❌ [STATE] Error cargando categorías: $e'); // Debug log
+      AppLogger.debug('Cargando categorías...', 'INVENTORY');
+      final categorias = await BackgroundTaskService.runAsyncWithYield(
+        () => ApiService.getCategorias(),
+        taskName: 'loadCategorias',
+      );
+      
+      if (categorias != null) {
+        _categorias = categorias;
+        AppLogger.info('${categorias.length} categorías cargadas', 'INVENTORY');
+      } else {
+        AppLogger.warning('No se pudieron cargar categorías', 'INVENTORY');
+        _categorias = [];
+      }
+    } catch (e, stackTrace) {
+      AppLogger.error('Error cargando categorías', 'INVENTORY', e, stackTrace);
       _setError('Error al cargar categorías: ${e.toString()}');
       rethrow;
     }

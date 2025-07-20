@@ -1,1 +1,30 @@
 include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "build/**"
+    - "trash_files/**"
+
+linter:
+  rules:
+    # Desactivar reglas problemáticas temporalmente mientras se migra
+    avoid_print: false  # Desactivamos temporalmente mientras migramos a AppLogger
+    use_build_context_synchronously: true  # Activamos esta regla importante
+    
+    # Reglas de rendimiento
+    avoid_unnecessary_containers: true
+    avoid_function_literals_in_foreach_calls: true
+    prefer_const_constructors: true
+    prefer_const_literals_to_create_immutables: true
+    
+    # Reglas de estilo
+    prefer_single_quotes: true
+    require_trailing_commas: true
+    sort_child_properties_last: true
+    
+    # Reglas de seguridad
+    avoid_web_libraries_in_flutter: true
+    cancel_subscriptions: true
+    close_sinks: true

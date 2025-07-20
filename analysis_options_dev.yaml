@@ -1,6 +1,29 @@
+include: package:flutter_lints/flutter.yaml
+
 analyzer:
   exclude:
-    - test_api.dart  # Archivo de testing con prints para debugging
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "build/**"
+    - "trash_files/**"  # Excluir archivos de prueba
+    - "test_api.dart"  # Archivo de testing con prints para debugging
   
   errors:
-    avoid_print: ignore  # Solo para archivos de testing
+    avoid_print: ignore  # Solo para archivos de testing en modo desarrollo
+    use_build_context_synchronously: warning  # Advertencia en lugar de error
+
+linter:
+  rules:
+    # En desarrollo, permitimos más flexibilidad
+    avoid_print: false  # Permitido en desarrollo
+    use_build_context_synchronously: false  # Más flexible en desarrollo
+    
+    # Reglas básicas de rendimiento
+    avoid_unnecessary_containers: true
+    prefer_const_constructors: true
+    
+    # Reglas de estilo básicas
+    prefer_single_quotes: true
+    
+    # Reglas de seguridad básicas
+    avoid_web_libraries_in_flutter: true

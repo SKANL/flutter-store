@@ -142,17 +142,30 @@ class Product {
 
   // Convierte a Map para enviar a la API (solo campos del modelo de BD)
   Map<String, dynamic> toJson() {
-    return {
-      if (idProducto != null) 'idProducto': idProducto,
+    final json = <String, dynamic>{
       'nombre': nombre,
-      if (codigoDeBarra != null) 'codigoDeBarra': codigoDeBarra,
       'precioCosto': precioCosto,
       'precioVenta': precioVenta,
       'stockActual': stockActual,
       'stockMinimo': stockMinimo,
       'idCategoria': idCategoria,
-      if (idProveedor != null) 'idProveedor': idProveedor,
     };
+    
+    // Incluir ID solo si existe (para actualizaciones)
+    if (idProducto != null) {
+      json['idProducto'] = idProducto;
+    }
+    
+    // Incluir código de barras siempre, incluso si es null o vacío
+    // Esto asegura que el campo se envíe a la API
+    json['codigoDeBarra'] = codigoDeBarra;
+    
+    // Incluir proveedor solo si existe
+    if (idProveedor != null) {
+      json['idProveedor'] = idProveedor;
+    }
+    
+    return json;
   }
 
   // Crea desde Map recibido de la API

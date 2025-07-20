@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:store_manager/core/app_theme.dart';
 import 'package:store_manager/core/inventory_state.dart';
+import 'package:store_manager/core/app_logger.dart';
 import 'package:store_manager/screens/store_dashboard_screen.dart';
 
 void main() {
+  // Configurar el sistema de logging
+  AppLogger.setLogLevel(LogLevel.debug);
+  AppLogger.info('Iniciando Store Manager App', 'MAIN');
+  
   runApp(const MainApp());
 }
 
@@ -54,7 +59,7 @@ class _AppInitializerState extends State<AppInitializer> {
 
   Future<void> _initializeApp() async {
     // Mostrar UI inmediatamente sin bloquear
-    // La carga se hace en background completamente
+    AppLogger.debug('Iniciando carga de datos en background', 'INIT');
 
     // Cargar datos en background sin bloquear el UI
     try {
@@ -62,8 +67,10 @@ class _AppInitializerState extends State<AppInitializer> {
       await Future.microtask(() async {
         await widget.inventoryState.initializeData();
       });
-    } catch (e) {
-      print('❌ [INIT] Error durante la carga en background: $e'); // Debug log
+      
+      AppLogger.info('Datos cargados exitosamente', 'INIT');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error durante la carga en background', 'INIT', e, stackTrace);
       
       if (mounted) {
         // Mostrar snackbar con error pero mantener la UI funcional
