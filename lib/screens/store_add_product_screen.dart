@@ -7,7 +7,11 @@ import '../models/categoria.dart';
 import '../models/proveedor.dart';
 import '../models/producto_caducidad.dart';
 import '../services/api_service.dart';
+import '../services/camera_permission_service.dart';
+import '../services/barcode_generator_service.dart';
 import '../components/custom_text_field.dart';
+import '../components/custom_barcode_scanner.dart';
+import '../components/barcode_display_widget.dart';
 import 'store_dashboard_screen.dart';
 
 class StoreAddProductScreen extends StatefulWidget {
@@ -662,13 +666,329 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
     }
   }
 
-  void _scanBarcode() {
-    // TODO: Implementar escáner de códigos de barras
-    // Por ahora mostramos un mensaje
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Función de escáner próximamente disponible'),
-        backgroundColor: AppColors.primary,
+  void _scanBarcode() async {
+    try {
+      // Verificar y solicitar permisos de cámara
+      final hasPermission = await CameraPermissionService.requestPermissionWithUI(context);
+      if (!hasPermission) {
+        return;
+      }
+
+      // Mostrar opciones: escanear o generar
+      final result = await showModalBottomSheet<String>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => _buildBarcodeOptionsBottomSheet(),
+      );
+
+      if (result != null && result.isNotEmpty) {
+        setState(() {
+          _barcodeController.text = result;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Código de barras agregado: $result'),
+              backgroundColor: Colors.green,
+              action: SnackBarAction(
+                label: 'Ver',
+                textColor: Colors.white,
+                onPressed: () => _showBarcodePreview(result),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildBarcodeOptionsBottomSheet() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle indicator
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Title
+            Text(
+              'Código de Barras',
+              style: AppTextStyles.title.copyWith(fontSize: 20),
+            ),
+            
+            const SizedBox(height: 8),
+            
+            Text(
+              'Selecciona una opción para agregar el código',
+              style: AppTextStyles.description,
+              textAlign: TextAlign.center,
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Options
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  // Scan barcode
+                  _buildOptionCard(
+                    icon: Icons.qr_code_scanner,
+                    title: 'Escanear Código',
+                    subtitle: 'Usa la cámara para escanear un código existente',
+                    color: AppColors.primary,
+                    onTap: () => _openBarcodeScanner(),
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Generate barcode
+                  _buildOptionCard(
+                    icon: Icons.qr_code,
+                    title: 'Generar Código',
+                    subtitle: 'Crear un nuevo código de barras único',
+                    color: Colors.green,
+                    onTap: () => _showBarcodeGenerator(),
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Manual input
+                  _buildOptionCard(
+                    icon: Icons.keyboard,
+                    title: 'Ingresar Manualmente',
+                    subtitle: 'Escribir el código de barras',
+                    color: Colors.orange,
+                    onTap: () => _showManualBarcodeInput(),
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Cancel button
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text('Cancelar'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            
+            const SizedBox(width: 16),
+            
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.description.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.small,
+                  ),
+                ],
+              ),
+            ),
+            
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openBarcodeScanner() async {
+    Navigator.of(context).pop(); // Cerrar bottom sheet
+    
+    try {
+      final result = await Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (context) => CustomBarcodeScanner(
+            onBarcodeScanned: (barcode) {
+              Navigator.of(context).pop(barcode);
+            },
+            title: 'Escanear Código de Barras',
+            subtitle: 'Alinea el código dentro del marco para escanearlo',
+          ),
+        ),
+      );
+
+      if (result != null && mounted) {
+        Navigator.of(context).pop(result); // Regresar el resultado al método principal
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al abrir escáner: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showBarcodeGenerator() {
+    Navigator.of(context).pop(); // Cerrar bottom sheet
+    
+    showDialog(
+      context: context,
+      builder: (context) => BarcodeGeneratorDialog(
+        onBarcodeGenerated: (barcode) {
+          Navigator.of(context).pop(barcode); // Regresar el resultado al método principal
+        },
+      ),
+    );
+  }
+
+  void _showManualBarcodeInput() {
+    Navigator.of(context).pop(); // Cerrar bottom sheet
+    
+    final controller = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ingresar Código de Barras'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Ingresa el código de barras manualmente:',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'Código de barras',
+                border: OutlineInputBorder(),
+                hintText: 'Ej. 1234567890123',
+              ),
+              keyboardType: TextInputType.text,
+              textInputAction: TextInputAction.done,
+              autofocus: true,
+              onSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(value.trim()); // Regresar el resultado al método principal
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final barcode = controller.text.trim();
+              if (barcode.isNotEmpty) {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop(barcode); // Regresar el resultado al método principal
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBarcodePreview(String barcode) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Vista Previa del Código'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: BarcodeDisplayWidget(
+            barcode: barcode,
+            width: 250,
+            height: 100,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cerrar'),
+          ),
+        ],
       ),
     );
   }

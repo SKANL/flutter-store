@@ -6,8 +6,10 @@ import '../core/inventory_state.dart';
 import '../models/product.dart';
 import '../models/detalle_venta.dart';
 import '../services/api_service.dart';
+import '../services/camera_permission_service.dart';
 import '../components/sale_item_card.dart';
 import '../components/custom_text_field.dart';
+import '../components/custom_barcode_scanner.dart';
 
 class StoreRegisterSaleScreen extends StatefulWidget {
   const StoreRegisterSaleScreen({super.key});
@@ -343,9 +345,13 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
                         controller: _barcodeController,
                         label: 'Código de barras',
                         prefixIcon: const Icon(Icons.qr_code_scanner),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        keyboardType: TextInputType.text,
                         onSubmitted: _searchProductByBarcode,
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.camera_alt),
+                          onPressed: _scanBarcodeForSale,
+                          tooltip: 'Escanear código de barras',
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -562,5 +568,47 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
         ],
       ),
     );
+  }
+
+  void _scanBarcodeForSale() async {
+    try {
+      // Verificar y solicitar permisos de cámara
+      final hasPermission = await CameraPermissionService.requestPermissionWithUI(context);
+      if (!hasPermission) {
+        return;
+      }
+
+      // Abrir el escáner
+      final result = await Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (context) => CustomBarcodeScanner(
+            onBarcodeScanned: (barcode) {
+              Navigator.of(context).pop(barcode);
+            },
+            title: 'Escanear Producto',
+            subtitle: 'Escanea el código de barras del producto a vender',
+          ),
+        ),
+      );
+
+      if (result != null && result.isNotEmpty) {
+        // Actualizar el campo de texto y buscar el producto
+        setState(() {
+          _barcodeController.text = result;
+        });
+        
+        // Buscar automáticamente el producto
+        await _searchProductByBarcode(result);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al abrir escáner: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

@@ -10,6 +10,12 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.1.2
+  # Barcode scanning
+  mobile_scanner: ^5.2.3
+  # Barcode generation
+  barcode_widget: ^2.0.4
+  # Permissions
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
