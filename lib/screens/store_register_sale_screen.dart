@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_color.dart';
+import '../core/app_text_styles.dart';
 
 class StoreRegisterSaleScreen extends StatelessWidget {
   const StoreRegisterSaleScreen({super.key});
@@ -20,19 +21,13 @@ class StoreRegisterSaleScreen extends StatelessWidget {
             SizedBox(height: 20),
             Text(
               'Registrar Venta',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.title,
             ),
             SizedBox(height: 10),
             Text(
               'Aquí podrás registrar nuevas ventas\ny actualizar el inventario',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
+              style: AppTextStyles.description,
             ),
           ],
         ),

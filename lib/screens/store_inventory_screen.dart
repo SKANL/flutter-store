@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_color.dart';
+import '../core/app_text_styles.dart';
 
 class StoreInventoryScreen extends StatelessWidget {
   const StoreInventoryScreen({super.key});
@@ -20,19 +21,13 @@ class StoreInventoryScreen extends StatelessWidget {
             SizedBox(height: 20),
             Text(
               'Inventario',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.title,
             ),
             SizedBox(height: 10),
             Text(
               'Aquí podrás gestionar tu inventario\nValor total: \$72.00',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
+              style: AppTextStyles.description,
             ),
           ],
         ),
