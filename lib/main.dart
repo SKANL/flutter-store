@@ -22,6 +22,10 @@ class MainApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         home: AppInitializer(inventoryState: inventoryState),
         debugShowCheckedModeBanner: false,
+        // Añadir rutas con nombre para navegación de respaldo
+        routes: {
+          '/dashboard': (context) => const StoreDashboardScreen(),
+        },
       ),
     );
   }

@@ -157,37 +157,56 @@ class InventoryState extends ChangeNotifier {
   }
 
   Future<void> addProduct(Product product) async {
+    print('🔄 [STATE] Iniciando addProduct...');
     _setLoading(true);
     _clearError();
 
     try {
+      print('📤 [STATE] Enviando producto a API...');
       final newProduct = await ApiService.createProduct(product);
+      print('✅ [STATE] Producto creado en API: ${newProduct.idProducto}');
+      
       _products.add(newProduct);
+      print('✅ [STATE] Producto agregado a lista local');
+      
       notifyListeners();
+      print('✅ [STATE] Listeners notificados');
     } catch (e) {
+      print('❌ [STATE] Error en addProduct: $e');
       _setError('Error al agregar producto: ${e.toString()}');
       rethrow;
     } finally {
       _setLoading(false);
+      print('🔚 [STATE] addProduct finalizado');
     }
   }
 
   Future<void> updateProduct(Product product) async {
+    print('🔄 [STATE] Iniciando updateProduct...');
     _setLoading(true);
     _clearError();
 
     try {
+      print('📤 [STATE] Enviando actualización a API...');
       final updatedProduct = await ApiService.updateProduct(product);
+      print('✅ [STATE] Producto actualizado en API: ${updatedProduct.idProducto}');
+      
       final index = _products.indexWhere((p) => p.idProducto == product.idProducto);
       if (index != -1) {
         _products[index] = updatedProduct;
+        print('✅ [STATE] Producto actualizado en lista local');
         notifyListeners();
+        print('✅ [STATE] Listeners notificados');
+      } else {
+        print('⚠️ [STATE] Producto no encontrado en lista local');
       }
     } catch (e) {
+      print('❌ [STATE] Error en updateProduct: $e');
       _setError('Error al actualizar producto: ${e.toString()}');
       rethrow;
     } finally {
       _setLoading(false);
+      print('🔚 [STATE] updateProduct finalizado');
     }
   }
 

@@ -43,12 +43,23 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
       ),
       floatingActionButton: _currentIndex == 1 // Solo mostrar en inventario
           ? FloatingAddButton(
-              onPressed: () {
-                Navigator.of(context).push(
+              onPressed: () async {
+                print('🔄 [NAV] Navegando a agregar producto desde dashboard...');
+                final result = await Navigator.of(context).push<bool>(
                   MaterialPageRoute(
                     builder: (context) => const StoreAddProductScreen(),
                   ),
                 );
+                if (result == true) {
+                  print('✅ [NAV] Producto guardado desde dashboard, recargando...');
+                  // Aquí podrías recargar el inventario si es necesario
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Producto agregado exitosamente'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
               },
               tooltip: 'Agregar Producto',
             )

@@ -60,7 +60,7 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
                 }
 
                 if (state.products.isEmpty) {
-                  return _buildEmptyView();
+                  return _buildEmptyView(context);
                 }
 
                 return _buildProductsList(state);
@@ -244,7 +244,7 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
 
   Widget _buildProductsList(InventoryState state) {
     final products = state.filteredProducts;
-    
+
     if (products.isEmpty) {
       return Center(
         child: Column(
@@ -274,7 +274,7 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
 
     return RefreshIndicator(
       color: AppColors.primary,
-      onRefresh: () => state.refreshProducts(),
+      onRefresh: state.refreshProducts,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: products.length,
@@ -290,7 +290,7 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
     );
   }
 
-  Widget _buildEmptyView() {
+  Widget _buildEmptyView(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -315,13 +315,26 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
-            onPressed: () {
-              // Navegar a pantalla de agregar producto
-              Navigator.of(context).push(
+            onPressed: () async {
+              // Navegar a pantalla de agregar producto y esperar resultado
+              final result = await Navigator.of(context).push<bool>(
                 MaterialPageRoute(
                   builder: (context) => const StoreAddProductScreen(),
                 ),
               );
+              if (result == true) {
+                // Recargar lista e informar éxito
+                final state = InventoryProvider.of(context);
+                state?.loadProducts();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Producto agregado exitosamente'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              }
             },
             icon: const Icon(Icons.add),
             label: const Text('Agregar Producto'),
@@ -373,14 +386,28 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
     );
   }
 
-  void _editProduct(Product product) {
-    Navigator.of(context).push(
+  Future<void> _editProduct(Product product) async {
+    // Navegar a pantalla de edición y esperar resultado
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (context) => StoreAddProductScreen(
           productToEdit: product,
         ),
       ),
     );
+    if (result == true) {
+      // Recargar lista e informar actualización exitosa
+      final state = InventoryProvider.of(context);
+      state?.loadProducts();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Producto actualizado exitosamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    }
   }
 
   void _deleteProduct(Product product) {

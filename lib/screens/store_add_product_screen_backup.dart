@@ -867,3 +867,78 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
     return '${date.day}/${date.month}/${date.year}';
   }
 }
+
+  Future<void> _handleSuccessfulSave(bool wasEditing) async {
+    print('🎉 [SAVE] Operación exitosa, manejando navegación...');
+    
+    // Mostrar mensaje de éxito
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(wasEditing ? 'Producto actualizado correctamente' : 'Producto guardado correctamente'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      
+      // Dar tiempo para que se muestre el SnackBar
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    // Intentar diferentes métodos de navegación en orden de preferencia
+    if (mounted && context.mounted) {
+      print('🔄 [SAVE] Intentando navegación método 1: Navigator.pop()');
+      
+      try {
+        // Método 1: Navigator.pop normal
+        Navigator.of(context).pop(true);
+        print('✅ [SAVE] Navegación exitosa con pop()');
+        return;
+      } catch (e1) {
+        print('❌ [SAVE] Error en método 1: $e1');
+        
+        try {
+          print('🔄 [SAVE] Intentando navegación método 2: Navigator.maybePop()');
+          // Método 2: maybePop
+          final didPop = await Navigator.of(context).maybePop(true);
+          if (didPop) {
+            print('✅ [SAVE] Navegación exitosa con maybePop()');
+            return;
+          }
+        } catch (e2) {
+          print('❌ [SAVE] Error en método 2: $e2');
+        }
+
+        try {
+          print('🔄 [SAVE] Intentando navegación método 3: pushReplacementNamed()');
+          // Método 3: Reemplazar con dashboard
+          Navigator.of(context).pushReplacementNamed('/dashboard');
+          print('✅ [SAVE] Navegación exitosa con pushReplacementNamed()');
+          return;
+        } catch (e3) {
+          print('❌ [SAVE] Error en método 3: $e3');
+        }
+
+        try {
+          print('� [SAVE] Intentando navegación método 4: pushAndRemoveUntil()');
+          // Método 4: Ir al dashboard limpiando el stack
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const StoreDashboardScreen()),
+            (route) => false,
+          );
+          print('✅ [SAVE] Navegación exitosa con pushAndRemoveUntil()');
+          return;
+        } catch (e4) {
+          print('❌ [SAVE] Error en método 4: $e4');
+          print('🚨 [SAVE] Todos los métodos de navegación fallaron');
+        }
+      }
+    } else {
+      print('⚠️ [SAVE] Contexto no válido para navegación');
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
