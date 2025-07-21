@@ -239,6 +239,75 @@ class ApiService {
     }
   }
 
+  static Future<Proveedor> createProveedor(Proveedor proveedor) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.proveedores}'),
+            headers: _headers,
+            body: json.encode(proveedor.toJson()),
+          )
+          .timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 201) {
+        // Limpiar cache al crear un proveedor nuevo
+        _proveedoresCache = null;
+        _proveedoresLastFetch = null;
+        return Proveedor.fromJson(json.decode(response.body));
+      }
+      
+      _handleHttpError(response);
+      throw ServerException('Error al crear proveedor');
+    } catch (e) {
+      throw _mapException(e);
+    }
+  }
+
+  static Future<void> updateProveedor(Proveedor proveedor) async {
+    try {
+      final response = await http
+          .put(
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.proveedorById(proveedor.idProveedor!)}'),
+            headers: _headers,
+            body: json.encode(proveedor.toJson()),
+          )
+          .timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 204) {
+        // Limpiar cache al actualizar
+        _proveedoresCache = null;
+        _proveedoresLastFetch = null;
+        return;
+      }
+      
+      _handleHttpError(response);
+    } catch (e) {
+      throw _mapException(e);
+    }
+  }
+
+  static Future<void> deleteProveedor(int id) async {
+    try {
+      final response = await http
+          .delete(
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.proveedorById(id)}'), 
+            headers: _headers,
+          )
+          .timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 204) {
+        // Limpiar cache al eliminar
+        _proveedoresCache = null;
+        _proveedoresLastFetch = null;
+        return;
+      }
+      
+      _handleHttpError(response);
+    } catch (e) {
+      throw _mapException(e);
+    }
+  }
+
   // --- PRODUCTOS ---
 
   static Future<List<Product>> getAllProducts() async {
@@ -431,6 +500,29 @@ class ApiService {
     }
   }
 
+  static Future<ProductoCaducidad> updateProductoCaducidad(ProductoCaducidad caducidad) async {
+    try {
+      final response = await http
+          .put(
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.productoCaducidadById(caducidad.idProductoCaducidad!)}'),
+            headers: _headers,
+            body: json.encode(caducidad.toJson()),
+          )
+          .timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 204) {
+        return caducidad;
+      } else if (response.statusCode == 200) {
+        return ProductoCaducidad.fromJson(json.decode(response.body));
+      }
+      
+      _handleHttpError(response);
+      throw ServerException('Error al actualizar caducidad');
+    } catch (e) {
+      throw _mapException(e);
+    }
+  }
+
   static Future<void> deleteProductoCaducidad(int id) async {
     try {
       final response = await http
@@ -549,8 +641,54 @@ class ApiService {
   }
 
   static Future<List<Product>> getLowStockProducts() async {
-    final products = await getAllProducts();
-    return products.where((product) => product.isLowStock).toList();
+    try {
+      // Usar la vista optimizada de la BD
+      final response = await http
+          .get(
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.vistasStockBajo}'), 
+            headers: _headers,
+          )
+          .timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        final products = jsonList.map((json) => Product.fromJson(json)).toList();
+        return await _enrichProducts(products);
+      }
+      
+      _handleHttpError(response);
+      return [];
+    } catch (e) {
+      // Fallback al método local si la vista no está disponible
+      print('⚠️ [API] Vista stock-bajo no disponible, usando método local: $e');
+      final products = await getAllProducts();
+      return products.where((product) => product.isLowStock).toList();
+    }
+  }
+
+  static Future<List<Product>> getProductosStatus() async {
+    try {
+      // Usar la vista optimizada de productos-status
+      final response = await http
+          .get(
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.vistasProductosStatus}'), 
+            headers: _headers,
+          )
+          .timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        final products = jsonList.map((json) => Product.fromJson(json)).toList();
+        return await _enrichProducts(products);
+      }
+      
+      _handleHttpError(response);
+      return [];
+    } catch (e) {
+      // Fallback al método normal si la vista no está disponible
+      print('⚠️ [API] Vista productos-status no disponible, usando getAllProducts: $e');
+      return await getAllProducts();
+    }
   }
 
   static Future<List<Product>> getExpiringProducts() async {
@@ -639,6 +777,45 @@ class ApiService {
     }
   }
 
+  static Future<void> updateVenta(Venta venta) async {
+    try {
+      final response = await http
+          .put(
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.ventaById(venta.idVenta!)}'),
+            headers: _headers,
+            body: json.encode(venta.toJson()),
+          )
+          .timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 204) {
+        return;
+      }
+      
+      _handleHttpError(response);
+    } catch (e) {
+      throw _mapException(e);
+    }
+  }
+
+  static Future<void> deleteVenta(int id) async {
+    try {
+      final response = await http
+          .delete(
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.ventaById(id)}'), 
+            headers: _headers,
+          )
+          .timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 204) {
+        return;
+      }
+      
+      _handleHttpError(response);
+    } catch (e) {
+      throw _mapException(e);
+    }
+  }
+
   // --- DETALLES DE VENTA ---
 
   static Future<List<DetalleVenta>> getDetallesVentaByVentaId(int idVenta) async {
@@ -681,6 +858,67 @@ class ApiService {
       
       _handleHttpError(response);
       throw ServerException('Error al crear detalle de venta');
+    } catch (e) {
+      throw _mapException(e);
+    }
+  }
+
+  static Future<DetalleVenta?> getDetalleVentaById(int id) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.detalleVentaById(id)}'), 
+            headers: _headers,
+          )
+          .timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 200) {
+        return DetalleVenta.fromJson(json.decode(response.body));
+      } else if (response.statusCode == 404) {
+        return null;
+      }
+      
+      _handleHttpError(response);
+      return null;
+    } catch (e) {
+      throw _mapException(e);
+    }
+  }
+
+  static Future<void> updateDetalleVenta(DetalleVenta detalle) async {
+    try {
+      final response = await http
+          .put(
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.detalleVentaById(detalle.idDetalle!)}'),
+            headers: _headers,
+            body: json.encode(detalle.toJson()),
+          )
+          .timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 204) {
+        return;
+      }
+      
+      _handleHttpError(response);
+    } catch (e) {
+      throw _mapException(e);
+    }
+  }
+
+  static Future<void> deleteDetalleVenta(int id) async {
+    try {
+      final response = await http
+          .delete(
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.detalleVentaById(id)}'), 
+            headers: _headers,
+          )
+          .timeout(ApiConfig.timeout);
+
+      if (response.statusCode == 204) {
+        return;
+      }
+      
+      _handleHttpError(response);
     } catch (e) {
       throw _mapException(e);
     }

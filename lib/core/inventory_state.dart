@@ -271,6 +271,60 @@ class InventoryState extends ChangeNotifier {
     }
   }
 
+  // --- MÉTODOS PARA PROVEEDORES ---
+
+  Future<void> addProveedor(Proveedor proveedor) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final newProveedor = await ApiService.createProveedor(proveedor);
+      _proveedores.add(newProveedor);
+      notifyListeners();
+    } catch (e) {
+      _setError('Error al agregar proveedor: ${e.toString()}');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> updateProveedor(Proveedor proveedor) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      await ApiService.updateProveedor(proveedor);
+      
+      final index = _proveedores.indexWhere((p) => p.idProveedor == proveedor.idProveedor);
+      if (index != -1) {
+        _proveedores[index] = proveedor;
+      }
+      notifyListeners();
+    } catch (e) {
+      _setError('Error al actualizar proveedor: ${e.toString()}');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> deleteProveedor(int proveedorId) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      await ApiService.deleteProveedor(proveedorId);
+      _proveedores.removeWhere((proveedor) => proveedor.idProveedor == proveedorId);
+      notifyListeners();
+    } catch (e) {
+      _setError('Error al eliminar proveedor: ${e.toString()}');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   Future<void> refreshProducts() async {
     await loadProducts();
   }

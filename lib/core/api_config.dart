@@ -49,10 +49,14 @@ class ApiEndpoints {
   
   // Ventas
   static const String ventas = '/api/ventas';
-  static const String ventasWithDetails = '/api/ventas/with-details';
+  static const String ventasWithDetails = '/api/ventas/withdetails';
   static String ventaById(int id) => '/api/ventas/$id';
   
   // Detalles de Venta
   static const String detallesVenta = '/api/detallesventa';
   static String detalleVentaById(int id) => '/api/detallesventa/$id';
+  
+  // Vistas
+  static const String vistasProductosStatus = '/api/vistas/productos-status';
+  static const String vistasStockBajo = '/api/vistas/stock-bajo';
 }

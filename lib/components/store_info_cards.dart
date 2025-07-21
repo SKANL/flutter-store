@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/app_color.dart';
 import '../core/inventory_state.dart';
+import '../screens/store_providers_management_screen.dart';
+import '../screens/store_advanced_reports_screen.dart';
 import 'card_widget.dart';
 
 class StoreInfoCards extends StatelessWidget {
@@ -84,6 +86,42 @@ class StoreInfoCards extends StatelessWidget {
                     }
                   },
                   isLoading: inventory.isLoading && inventory.products.isEmpty,
+                ),
+              ],
+            ),
+            // Fila 3: Botones Administrativos
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                CardWidget(
+                  title: 'Gestión de Proveedores',
+                  value: inventory.isLoading && inventory.proveedores.isEmpty
+                    ? 'Cargando...'
+                    : '${inventory.proveedores.length} Proveedores',
+                  color: AppColors.backgroundComponent,
+                  textColor: Colors.indigo,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const StoreProvidersManagementScreen(),
+                      ),
+                    );
+                  },
+                  isLoading: inventory.isLoading && inventory.proveedores.isEmpty,
+                ),
+                CardWidget(
+                  title: 'Reportes Avanzados',
+                  value: 'Ver Análisis',
+                  color: AppColors.backgroundComponent,
+                  textColor: Colors.teal,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const StoreAdvancedReportsScreen(),
+                      ),
+                    );
+                  },
+                  isLoading: false,
                 ),
               ],
             ),
