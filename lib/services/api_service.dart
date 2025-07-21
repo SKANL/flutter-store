@@ -1159,23 +1159,23 @@ class ApiService {
       final ventasHoy = ventas.where((v) => 
         v.fecha.year == DateTime.now().year &&
         v.fecha.month == DateTime.now().month &&
-        v.fecha.day == DateTime.now().day
+        v.fecha.day == DateTime.now().day,
       ).length;
       
       final ingresosTotales = ventas.fold(0.0, (sum, venta) => sum + venta.total);
       final ingresosHoy = ventas.where((v) => 
         v.fecha.year == DateTime.now().year &&
         v.fecha.month == DateTime.now().month &&
-        v.fecha.day == DateTime.now().day
+        v.fecha.day == DateTime.now().day,
       ).fold(0.0, (sum, venta) => sum + venta.total);
       
       // Calcular ganancias potenciales basadas en productos
       final gananciasPotenciales = productos.fold(0.0, (sum, producto) => 
-        sum + ((producto.precioVenta - producto.precioCosto) * producto.stockActual));
+        sum + ((producto.precioVenta - producto.precioCosto) * producto.stockActual),);
       
       // Productos con más stock (como indicador de popularidad)
       final productosOrdenados = productos..sort((a, b) => 
-        b.stockActual.compareTo(a.stockActual));
+        b.stockActual.compareTo(a.stockActual),);
       final topProductos = productosOrdenados.take(5).toList();
       
       // Productos con bajo stock (necesitan reposición)
@@ -1195,8 +1195,8 @@ class ApiService {
           'nombre': p.nombre,
           'stockActual': p.stockActual,
           'precioVenta': p.precioVenta,
-          'gananciaUnitaria': p.precioVenta - p.precioCosto
-        }).toList(),
+          'gananciaUnitaria': p.precioVenta - p.precioCosto,
+        },).toList(),
         'fechaActualizacion': DateTime.now().toIso8601String(),
       };
     } catch (e) {
@@ -1225,7 +1225,7 @@ class ApiService {
       return ventas.where((venta) => 
         venta.fecha.year == hoy.year &&
         venta.fecha.month == hoy.month &&
-        venta.fecha.day == hoy.day
+        venta.fecha.day == hoy.day,
       ).toList();
     } catch (e) {
       throw ServerException('Error al obtener ventas de hoy: $e');

@@ -1173,8 +1173,10 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
           if (mounted && context.mounted) {
             try {
               await Future.delayed(const Duration(milliseconds: 500));
-              Navigator.of(context).pop(true);
-              print('✅ [SAVE] Pop simple como último recurso');
+              if (mounted && context.mounted) {
+                Navigator.of(context).pop(true);
+                print('✅ [SAVE] Pop simple como último recurso');
+              }
             } catch (e3) {
               print('❌ [SAVE] Todos los métodos de navegación fallaron: $e3');
             }

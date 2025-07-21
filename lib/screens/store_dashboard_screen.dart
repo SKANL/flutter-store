@@ -50,10 +50,10 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
                     builder: (context) => const StoreAddProductScreen(),
                   ),
                 );
-                if (result == true) {
+                if (result == true && mounted) {
                   print('✅ [NAV] Producto guardado desde dashboard, recargando...');
                   // Aquí podrías recargar el inventario si es necesario
-                  if (mounted) {
+                  if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Producto agregado exitosamente'),

@@ -55,7 +55,7 @@ class _StoreProvidersManagementScreenState extends State<StoreProvidersManagemen
     String? diaRecarga = proveedor?.diaRecarga;
     
     final diasSemana = [
-      'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'
+      'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo',
     ];
 
     final result = await showDialog<bool>(
@@ -140,7 +140,7 @@ class _StoreProvidersManagementScreenState extends State<StoreProvidersManagemen
                       ...diasSemana.map((dia) => DropdownMenuItem<String>(
                         value: dia,
                         child: Text(dia),
-                      )),
+                      ),),
                     ],
                     onChanged: (value) {
                       setDialogState(() {

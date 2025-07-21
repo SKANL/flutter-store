@@ -325,9 +325,9 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
               );
               if (result == true && mounted) {
                 // Recargar lista e informar éxito
-                final state = InventoryProvider.of(context);
-                state?.loadProducts();
-                if (mounted) {
+                if (context.mounted) {
+                  final state = InventoryProvider.of(context);
+                  state?.loadProducts();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Producto agregado exitosamente'),
