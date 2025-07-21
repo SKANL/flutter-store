@@ -1103,6 +1103,92 @@ class ApiService {
     }
     return UnknownException('Error desconocido: $e');
   }
+
+  // --- ESTADÍSTICAS DE VENTAS ---
+
+  /// Obtiene un resumen completo de ventas y ganancias
+  static Future<Map<String, dynamic>> getSalesAndProfitSummary() async {
+    try {
+      final ventas = await getAllVentas();
+      final productos = await getAllProducts();
+      
+      // Calcular estadísticas de ventas
+      final totalVentas = ventas.length;
+      final ventasHoy = ventas.where((v) => 
+        v.fecha.year == DateTime.now().year &&
+        v.fecha.month == DateTime.now().month &&
+        v.fecha.day == DateTime.now().day
+      ).length;
+      
+      final ingresosTotales = ventas.fold(0.0, (sum, venta) => sum + venta.total);
+      final ingresosHoy = ventas.where((v) => 
+        v.fecha.year == DateTime.now().year &&
+        v.fecha.month == DateTime.now().month &&
+        v.fecha.day == DateTime.now().day
+      ).fold(0.0, (sum, venta) => sum + venta.total);
+      
+      // Calcular ganancias potenciales basadas en productos
+      final gananciasPotenciales = productos.fold(0.0, (sum, producto) => 
+        sum + ((producto.precioVenta - producto.precioCosto) * producto.stockActual));
+      
+      // Productos con más stock (como indicador de popularidad)
+      final productosOrdenados = productos..sort((a, b) => 
+        b.stockActual.compareTo(a.stockActual));
+      final topProductos = productosOrdenados.take(5).toList();
+      
+      // Productos con bajo stock (necesitan reposición)
+      final stockBajo = productos.where((p) => p.stockActual <= p.stockMinimo).length;
+      
+      return {
+        'totalVentas': totalVentas,
+        'ventasHoy': ventasHoy,
+        'ingresosTotales': ingresosTotales,
+        'ingresosHoy': ingresosHoy,
+        'gananciasPotenciales': gananciasPotenciales,
+        'promedioVentaDiaria': totalVentas > 0 ? ingresosTotales / totalVentas : 0.0,
+        'totalProductos': productos.length,
+        'stockBajo': stockBajo,
+        'valorInventario': productos.fold(0.0, (sum, p) => sum + (p.precioVenta * p.stockActual)),
+        'topProductos': topProductos.map((p) => {
+          'nombre': p.nombre,
+          'stockActual': p.stockActual,
+          'precioVenta': p.precioVenta,
+          'gananciaUnitaria': p.precioVenta - p.precioCosto
+        }).toList(),
+        'fechaActualizacion': DateTime.now().toIso8601String(),
+      };
+    } catch (e) {
+      throw ServerException('Error al obtener estadísticas de ventas: $e');
+    }
+  }
+
+  /// Obtiene ventas del último mes
+  static Future<List<Venta>> getVentasUltimoMes() async {
+    try {
+      final ventas = await getAllVentas();
+      final fechaLimite = DateTime.now().subtract(const Duration(days: 30));
+      
+      return ventas.where((venta) => venta.fecha.isAfter(fechaLimite)).toList();
+    } catch (e) {
+      throw ServerException('Error al obtener ventas del último mes: $e');
+    }
+  }
+
+  /// Obtiene las ventas de hoy
+  static Future<List<Venta>> getVentasHoy() async {
+    try {
+      final ventas = await getAllVentas();
+      final hoy = DateTime.now();
+      
+      return ventas.where((venta) => 
+        venta.fecha.year == hoy.year &&
+        venta.fecha.month == hoy.month &&
+        venta.fecha.day == hoy.day
+      ).toList();
+    } catch (e) {
+      throw ServerException('Error al obtener ventas de hoy: $e');
+    }
+  }
 }
 
 // Estadísticas del inventario

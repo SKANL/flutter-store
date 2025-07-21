@@ -16,6 +16,7 @@ class _StoreAdvancedReportsScreenState extends State<StoreAdvancedReportsScreen>
   List<Product> _productosStatus = [];
   List<Product> _stockBajo = [];
   List<Product> _expiringProducts = [];
+  Map<String, dynamic> _salesData = {};
 
   @override
   void initState() {
@@ -34,12 +35,14 @@ class _StoreAdvancedReportsScreenState extends State<StoreAdvancedReportsScreen>
         ApiService.getProductosStatus(), // Usa la nueva vista optimizada
         ApiService.getLowStockProducts(), // Usa la nueva vista optimizada
         ApiService.getExpiringProducts(),
+        ApiService.getSalesAndProfitSummary(), // Nuevas estadísticas de ventas
       ]);
 
       setState(() {
-        _productosStatus = futures[0];
-        _stockBajo = futures[1];
-        _expiringProducts = futures[2];
+        _productosStatus = futures[0] as List<Product>;
+        _stockBajo = futures[1] as List<Product>;
+        _expiringProducts = futures[2] as List<Product>;
+        _salesData = futures[3] as Map<String, dynamic>;
       });
     } catch (e) {
       setState(() {
@@ -116,6 +119,8 @@ class _StoreAdvancedReportsScreenState extends State<StoreAdvancedReportsScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildSalesAndProfitSection(),
+          const SizedBox(height: 24),
           _buildSummaryCards(),
           const SizedBox(height: 24),
           _buildStockBajoSection(),
@@ -410,5 +415,142 @@ class _StoreAdvancedReportsScreenState extends State<StoreAdvancedReportsScreen>
     if (_productosStatus.isEmpty) return 0.0;
     final total = _productosStatus.fold(0.0, (sum, product) => sum + product.precioVenta);
     return total / _productosStatus.length;
+  }
+
+  Widget _buildSalesAndProfitSection() {
+    if (_salesData.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '💰 Ventas y Beneficios',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        
+        // Cards de estadísticas de ventas
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'Ventas Totales',
+                value: '${_salesData['totalVentas'] ?? 0}',
+                icon: Icons.shopping_cart,
+                color: Colors.blue,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'Ventas Hoy',
+                value: '${_salesData['ventasHoy'] ?? 0}',
+                icon: Icons.today,
+                color: Colors.green,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'Ingresos Totales',
+                value: '\$${(_salesData['ingresosTotales'] ?? 0.0).toStringAsFixed(2)}',
+                icon: Icons.attach_money,
+                color: Colors.purple,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'Ingresos Hoy',
+                value: '\$${(_salesData['ingresosHoy'] ?? 0.0).toStringAsFixed(2)}',
+                icon: Icons.today,
+                color: Colors.orange,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'Ganancia Potencial',
+                value: '\$${(_salesData['gananciasPotenciales'] ?? 0.0).toStringAsFixed(2)}',
+                icon: Icons.trending_up,
+                color: Colors.teal,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'Promedio x Venta',
+                value: '\$${(_salesData['promedioVentaDiaria'] ?? 0.0).toStringAsFixed(2)}',
+                icon: Icons.analytics,
+                color: Colors.indigo,
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Top productos
+        if (_salesData['topProductos'] != null && (_salesData['topProductos'] as List).isNotEmpty) ...[
+          const Text(
+            'Top Productos por Stock',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: (_salesData['topProductos'] as List).length,
+              itemBuilder: (context, index) {
+                final producto = (_salesData['topProductos'] as List)[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.blue.shade100,
+                    child: Text('${index + 1}'),
+                  ),
+                  title: Text(
+                    producto['nombre'] ?? 'N/A',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text('Stock: ${producto['stockActual']} | Ganancia: \$${(producto['gananciaUnitaria'] ?? 0.0).toStringAsFixed(2)}'),
+                  trailing: Text(
+                    '\$${(producto['precioVenta'] ?? 0.0).toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }

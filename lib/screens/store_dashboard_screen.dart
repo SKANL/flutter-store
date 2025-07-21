@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:store_manager/components/store_info_cards.dart';
 import 'package:store_manager/screens/store_inventory_screen.dart';
 import 'package:store_manager/screens/store_add_product_screen.dart';
-import 'package:store_manager/screens/store_sales_profit_screen.dart';
+import 'package:store_manager/screens/store_advanced_reports_screen.dart';
 import 'package:store_manager/screens/store_register_sale_screen.dart';
 import '../components/bottom_navigation_bar.dart';
 import '../components/floating_add_button.dart';
@@ -25,7 +25,7 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
     },), // Dashboard
     const StoreInventoryScreen(), // Inventory
     const StoreAddProductScreen(), // Add Product
-    const StoreSalesProfitScreen(), // Sales
+    const StoreAdvancedReportsScreen(), // Sales & Reports
     const StoreRegisterSaleScreen(), // Registrar Venta
   ];
 

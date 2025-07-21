@@ -33,8 +33,8 @@ class CustomBottomNavigationBar extends StatelessWidget {
           label: 'Add Product',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.bar_chart),
-          label: 'Sales',
+          icon: Icon(Icons.analytics),
+          label: 'Reports',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.sell),
