@@ -907,7 +907,9 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
       context: context,
       builder: (context) => BarcodeGeneratorDialog(
         onBarcodeGenerated: (barcode) {
-          // El diálogo ya se cierra solo, solo cerrar el bottom sheet con el resultado
+          // Primero cerrar el diálogo del generador
+          Navigator.of(context).pop();
+          // Luego cerrar el bottom sheet pasando el código generado
           Navigator.of(context).pop(barcode);
         },
       ),

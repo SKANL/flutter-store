@@ -336,7 +336,7 @@ class _BarcodeGeneratorDialogState extends State<BarcodeGeneratorDialog> {
           onPressed: _generatedBarcode != null
               ? () {
                   widget.onBarcodeGenerated(_generatedBarcode!);
-                  Navigator.of(context).pop();
+                  // No cerrar automáticamente, dejar que el callback maneje la navegación
                 }
               : null,
           style: ElevatedButton.styleFrom(
