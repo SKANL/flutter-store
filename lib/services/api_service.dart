@@ -818,27 +818,55 @@ class ApiService {
 
   // --- DETALLES DE VENTA ---
 
-  static Future<List<DetalleVenta>> getDetallesVentaByVentaId(int idVenta) async {
+  static Future<List<DetalleVenta>> getAllDetallesVenta() async {
     try {
       final response = await http
           .get(
-            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.detallesVenta}?idVenta=$idVenta'), 
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.detallesVenta}'), 
             headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
-        return jsonList
-            .map((json) => DetalleVenta.fromJson(json))
-            .where((detalle) => detalle.idVenta == idVenta)
-            .toList();
+        return jsonList.map((json) => DetalleVenta.fromJson(json)).toList();
       }
       
       _handleHttpError(response);
       return [];
     } catch (e) {
       throw _mapException(e);
+    }
+  }
+
+  static Future<List<DetalleVenta>> getDetallesVentaByVentaId(int idVenta) async {
+    try {
+      // Obtener todos los detalles y filtrar por venta ID
+      final allDetalles = await getAllDetallesVenta();
+      return allDetalles.where((detalle) => detalle.idVenta == idVenta).toList();
+    } catch (e) {
+      // Fallback: usar query parameter si el backend lo soporta
+      try {
+        final response = await http
+            .get(
+              Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.detallesVenta}?idVenta=$idVenta'), 
+              headers: _headers,
+            )
+            .timeout(ApiConfig.timeout);
+
+        if (response.statusCode == 200) {
+          final List<dynamic> jsonList = json.decode(response.body);
+          return jsonList
+              .map((json) => DetalleVenta.fromJson(json))
+              .where((detalle) => detalle.idVenta == idVenta)
+              .toList();
+        }
+        
+        _handleHttpError(response);
+        return [];
+      } catch (e2) {
+        throw _mapException(e);
+      }
     }
   }
 
