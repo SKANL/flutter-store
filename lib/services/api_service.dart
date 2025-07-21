@@ -854,11 +854,15 @@ class ApiService {
 
   static Future<Venta> createVenta(Venta venta) async {
     try {
+      // Aseguramos que siempre enviamos una venta con total=0 para evitar la duplicación
+      // El backend calculará el total correcto mediante sus triggers
+      final ventaToSend = venta.copyWith(total: 0);
+      
       final response = await http
           .post(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.ventas}'),
             headers: _headers,
-            body: json.encode(venta.toJson()),
+            body: json.encode(ventaToSend.toJson()),
           )
           .timeout(ApiConfig.timeout);
 
@@ -1124,20 +1128,21 @@ class ApiService {
         print('🛒 [VENTA] Producto ${i + 1}: ID=${detalle.idProducto}, Cantidad=${detalle.cantidad}, Precio=\$${detalle.precioUnitario}');
       }
       
-      // Calcular el total
-      final total = detalles.fold(0.0, (sum, detalle) => sum + detalle.subtotal);
-      print('🛒 [VENTA] Creando venta por total: \$${total.toStringAsFixed(2)}');
+      // Calcular el total solo para logging (no lo usaremos en el objeto enviado)
+      final totalCalculado = detalles.fold(0.0, (sum, detalle) => sum + detalle.subtotal);
+      print('🛒 [VENTA] Calculando total local: \$${totalCalculado.toStringAsFixed(2)} (el backend calculará el total oficial)');
       print('🛒 [VENTA] ${detalles.length} productos en el carrito');
       
-      // Crear la venta completa con sus detalles
+      // Crear la venta completa con sus detalles - enviando 0 como total para que lo calcule el backend
       final nuevaVenta = Venta(
         fecha: DateTime.now(),
-        total: total,
+        total: 0, // Establecer a 0 para que el backend lo calcule mediante sus triggers
         detalles: detalles,
       );
+      final ventaJson = nuevaVenta.toJson();
       
       print('🛒 [VENTA] Enviando venta completa al servidor...');
-      print('📄 [VENTA] JSON enviado: ${json.encode(nuevaVenta.toJson())}');
+      print('📄 [VENTA] JSON enviado: ${json.encode(ventaJson)}');
       
       // Intentar primero con el endpoint optimizado, si falla usar el método legacy
       http.Response response;
@@ -1146,7 +1151,7 @@ class ApiService {
             .post(
               Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.ventasWithDetails}'),
               headers: _headers,
-              body: json.encode(nuevaVenta.toJson()),
+              body: json.encode(ventaJson),
             )
             .timeout(ApiConfig.timeout);
       } catch (e) {
@@ -1186,15 +1191,15 @@ class ApiService {
         throw Exception('No se pueden crear ventas sin productos');
       }
       
-      // Calcular el total
-      final total = detalles.fold(0.0, (sum, detalle) => sum + detalle.subtotal);
-      print('🛒 [LEGACY] Creando venta por total: \$${total.toStringAsFixed(2)}');
+      // Calcular el total solo para logging (no lo usaremos en el objeto enviado)
+      final totalCalculado = detalles.fold(0.0, (sum, detalle) => sum + detalle.subtotal);
+      print('🛒 [LEGACY] Total calculado localmente: \$${totalCalculado.toStringAsFixed(2)} (el backend calculará el total oficial)');
       print('🛒 [LEGACY] ${detalles.length} productos en el carrito');
       
-      // Crear la venta
+      // Crear la venta - estableciendo total en 0 para que el backend lo calcule
       final nuevaVenta = Venta(
         fecha: DateTime.now(),
-        total: total,
+        total: 0, // Establecer a 0 para que el backend lo calcule mediante sus triggers
       );
       
       print('🛒 [LEGACY] Enviando venta al servidor...');
