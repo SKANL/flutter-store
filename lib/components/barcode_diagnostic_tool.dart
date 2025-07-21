@@ -27,17 +27,17 @@ class _BarcodeDiagnosticToolState extends State<BarcodeDiagnosticTool> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Card(
+            const Card(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.info_outline, color: Colors.blue),
-                        const SizedBox(width: 8),
-                        const Text(
+                        Icon(Icons.info_outline, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text(
                           'Herramienta de Diagnóstico',
                           style: TextStyle(
                             fontSize: 18,
@@ -46,8 +46,8 @@ class _BarcodeDiagnosticToolState extends State<BarcodeDiagnosticTool> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                    SizedBox(height: 8),
+                    Text(
                       'Esta herramienta creará un producto de prueba con código de barras '
                       'y verificará si se guarda correctamente en la base de datos.',
                       style: TextStyle(color: Colors.grey),

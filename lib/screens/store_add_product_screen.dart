@@ -868,8 +868,6 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
   }
 
   void _openBarcodeScanner() async {
-    Navigator.of(context).pop(); // Cerrar bottom sheet
-    
     try {
       final result = await Navigator.of(context).push<String>(
         MaterialPageRoute(
@@ -884,10 +882,16 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
       );
 
       if (result != null && mounted) {
-        Navigator.of(context).pop(result); // Regresar el resultado al método principal
+        // Solo cerrar el bottom sheet y aplicar el resultado
+        Navigator.of(context).pop(result);
+      } else if (mounted) {
+        // Si no hay resultado, solo cerrar el bottom sheet sin resultado
+        Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
+        // Cerrar bottom sheet en caso de error
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al abrir escáner: ${e.toString()}'),
@@ -899,21 +903,19 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
   }
 
   void _showBarcodeGenerator() {
-    Navigator.of(context).pop(); // Cerrar bottom sheet
-    
     showDialog(
       context: context,
       builder: (context) => BarcodeGeneratorDialog(
         onBarcodeGenerated: (barcode) {
-          Navigator.of(context).pop(barcode); // Regresar el resultado al método principal
+          // Cerrar el diálogo y devolver el código al bottom sheet
+          Navigator.of(context).pop();
+          Navigator.of(context).pop(barcode);
         },
       ),
     );
   }
 
   void _showManualBarcodeInput() {
-    Navigator.of(context).pop(); // Cerrar bottom sheet
-    
     final controller = TextEditingController();
     
     showDialog(
@@ -941,7 +943,7 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
               onSubmitted: (value) {
                 if (value.trim().isNotEmpty) {
                   Navigator.of(context).pop();
-                  Navigator.of(context).pop(value.trim()); // Regresar el resultado al método principal
+                  Navigator.of(context).pop(value.trim());
                 }
               },
             ),
@@ -957,7 +959,7 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
               final barcode = controller.text.trim();
               if (barcode.isNotEmpty) {
                 Navigator.of(context).pop();
-                Navigator.of(context).pop(barcode); // Regresar el resultado al método principal
+                Navigator.of(context).pop(barcode);
               }
             },
             style: ElevatedButton.styleFrom(

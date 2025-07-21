@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../core/app_color.dart';
 
 class CustomBarcodeScanner extends StatefulWidget {
@@ -23,23 +24,32 @@ class CustomBarcodeScanner extends StatefulWidget {
   State<CustomBarcodeScanner> createState() => _CustomBarcodeScannerState();
 }
 
+enum ScannerState {
+  initializing,
+  ready,
+  scanning,
+  processing,
+  error,
+}
+
 class _CustomBarcodeScannerState extends State<CustomBarcodeScanner> 
     with SingleTickerProviderStateMixin {
-  final MobileScannerController controller = MobileScannerController(
-    detectionSpeed: DetectionSpeed.noDuplicates,
-    facing: CameraFacing.back,
-    torchEnabled: false,
-  );
+  MobileScannerController? _controller;
+  ScannerState _scannerState = ScannerState.initializing;
+  String? _errorMessage;
   
   final TextEditingController _manualInputController = TextEditingController();
   bool _isFlashOn = false;
   bool _isProcessing = false;
   late AnimationController _animationController;
-  late Animation<double> _animation;
-
-  @override
+  late Animation<double> _animation;  @override
   void initState() {
     super.initState();
+    _initializeAnimation();
+    _initializeScanner();
+  }
+
+  void _initializeAnimation() {
     _animationController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
@@ -54,16 +64,63 @@ class _CustomBarcodeScannerState extends State<CustomBarcodeScanner>
     ),);
   }
 
+  Future<void> _initializeScanner() async {
+    try {
+      debugPrint('🔄 Inicializando scanner...');
+      setState(() {
+        _scannerState = ScannerState.initializing;
+        _errorMessage = null;
+      });
+
+      // Verificar permisos primero
+      final hasPermission = await Permission.camera.isGranted;
+      if (!hasPermission) {
+        final status = await Permission.camera.request();
+        if (!status.isGranted) {
+          throw Exception('Permisos de cámara denegados');
+        }
+      }
+
+      // Inicializar controller
+      _controller = MobileScannerController(
+        detectionSpeed: DetectionSpeed.noDuplicates,
+        facing: CameraFacing.back,
+        torchEnabled: false,
+        autoStart: true, // Cambiar a true para que inicie automáticamente
+      );
+
+      // Esperar un momento para que el controller esté listo
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      if (mounted && _controller != null) {
+        setState(() {
+          _scannerState = ScannerState.ready;
+        });
+        debugPrint('✅ Scanner inicializado correctamente');
+      }
+    } catch (e) {
+      debugPrint('❌ Error inicializando scanner: $e');
+      if (mounted) {
+        setState(() {
+          _scannerState = ScannerState.error;
+          _errorMessage = 'Error al inicializar la cámara: ${e.toString()}';
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
+    debugPrint('🔄 Disposing scanner...');
     _animationController.dispose();
-    controller.dispose();
+    _controller?.dispose();
     _manualInputController.dispose();
     super.dispose();
+    debugPrint('✅ Scanner disposed');
   }
 
   void _onBarcodeDetected(BarcodeCapture barcodeCapture) async {
-    if (_isProcessing) return;
+    if (_isProcessing || _scannerState != ScannerState.ready) return;
     
     final List<Barcode> barcodes = barcodeCapture.barcodes;
     if (barcodes.isEmpty) return;
@@ -71,8 +128,11 @@ class _CustomBarcodeScannerState extends State<CustomBarcodeScanner>
     final barcode = barcodes.first;
     if (barcode.rawValue == null) return;
     
+    debugPrint('📱 Código detectado: ${barcode.rawValue}');
+    
     setState(() {
       _isProcessing = true;
+      _scannerState = ScannerState.processing;
     });
     
     // Vibrar si está habilitado
@@ -81,7 +141,11 @@ class _CustomBarcodeScannerState extends State<CustomBarcodeScanner>
     }
     
     // Pausar el escáner temporalmente
-    await controller.stop();
+    try {
+      await _controller?.stop();
+    } catch (e) {
+      debugPrint('⚠️ Error stopping controller: $e');
+    }
     
     // Llamar al callback con el código escaneado
     widget.onBarcodeScanned(barcode.rawValue!);
@@ -89,10 +153,12 @@ class _CustomBarcodeScannerState extends State<CustomBarcodeScanner>
 
   void _toggleFlash() async {
     try {
-      await controller.toggleTorch();
-      setState(() {
-        _isFlashOn = !_isFlashOn;
-      });
+      if (_controller != null) {
+        await _controller!.toggleTorch();
+        setState(() {
+          _isFlashOn = !_isFlashOn;
+        });
+      }
     } catch (e) {
       debugPrint('Error toggling flash: $e');
     }
@@ -171,51 +237,159 @@ class _CustomBarcodeScannerState extends State<CustomBarcodeScanner>
               onPressed: _showManualInputDialog,
               tooltip: 'Ingresar manualmente',
             ),
-          IconButton(
-            icon: Icon(_isFlashOn ? Icons.flash_on : Icons.flash_off),
-            onPressed: _toggleFlash,
-            tooltip: 'Flash',
+          if (_scannerState == ScannerState.ready)
+            IconButton(
+              icon: Icon(_isFlashOn ? Icons.flash_on : Icons.flash_off),
+              onPressed: _toggleFlash,
+              tooltip: 'Flash',
+            ),
+        ],
+      ),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    switch (_scannerState) {
+      case ScannerState.initializing:
+        return _buildInitializingState();
+      case ScannerState.ready:
+        return _buildScannerView();
+      case ScannerState.scanning:
+      case ScannerState.processing:
+        return _buildProcessingState();
+      case ScannerState.error:
+        return _buildErrorState();
+    }
+  }
+
+  Widget _buildInitializingState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Inicializando cámara...',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          // Scanner view
+    );
+  }
+
+  Widget _buildScannerView() {
+    return Stack(
+      children: [
+        // Scanner view
+        if (_controller != null)
           MobileScanner(
-            controller: controller,
+            controller: _controller!,
             onDetect: _onBarcodeDetected,
-          ),
-          
-          // Overlay with scanning frame
-          _buildScanningOverlay(),
-          
-          // Bottom instruction panel
-          _buildInstructionPanel(),
-          
-          // Processing indicator
-          if (_isProcessing)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Procesando...',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
+          )
+        else
+          Container(
+            color: Colors.black,
+            child: const Center(
+              child: Text(
+                'Error: Cámara no disponible',
+                style: TextStyle(color: Colors.white),
               ),
             ),
-        ],
+          ),
+        
+        // Overlay with scanning frame
+        _buildScanningOverlay(),
+        
+        // Bottom instruction panel
+        _buildInstructionPanel(),
+      ],
+    );
+  }
+
+  Widget _buildProcessingState() {
+    return Container(
+      color: Colors.black54,
+      child: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Procesando...',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.camera_alt_outlined,
+              size: 64,
+              color: Colors.white54,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Error con la cámara',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage ?? 'No se pudo inicializar la cámara',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _initializeScanner,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+            ),
+            if (widget.showManualInput) ...[
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: _showManualInputDialog,
+                icon: const Icon(Icons.keyboard),
+                label: const Text('Ingresar manualmente'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

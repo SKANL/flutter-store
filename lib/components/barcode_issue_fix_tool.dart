@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import '../core/app_logger.dart';
 import '../services/api_service.dart';
 import '../models/product.dart';
@@ -39,25 +38,25 @@ class _BarcodeIssueFixToolState extends State<BarcodeIssueFixTool> {
     return Container(
       color: Colors.red.shade50,
       padding: const EdgeInsets.all(16),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '🚨 PROBLEMAS IDENTIFICADOS',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 8),
-          const Text('1. Códigos de barras no se guardan en BD'),
-          const Text('2. Búsqueda siempre encuentra Coca Cola'),
-          const Text('3. Códigos no se muestran en inventario'),
-          const SizedBox(height: 12),
-          const Text(
+          SizedBox(height: 8),
+          Text('1. Códigos de barras no se guardan en BD'),
+          Text('2. Búsqueda siempre encuentra Coca Cola'),
+          Text('3. Códigos no se muestran en inventario'),
+          SizedBox(height: 12),
+          Text(
             '🛠️ ESTA HERRAMIENTA:',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          const Text('• Diagnostica el problema específico'),
-          const Text('• Corrige automáticamente los errores'),
-          const Text('• Verifica que todo funcione correctamente'),
+          Text('• Diagnostica el problema específico'),
+          Text('• Corrige automáticamente los errores'),
+          Text('• Verifica que todo funcione correctamente'),
         ],
       ),
     );
@@ -220,7 +219,7 @@ class _BarcodeIssueFixToolState extends State<BarcodeIssueFixTool> {
     _addStep('2️⃣ Identificar productos sin código', 'Analizando productos que necesitan código de barras...', false);
     
     _productsWithoutBarcode = _loadedProducts.where((p) => 
-      p.codigoDeBarra == null || p.codigoDeBarra!.trim().isEmpty
+      p.codigoDeBarra == null || p.codigoDeBarra!.trim().isEmpty,
     ).toList();
 
     _updateLastStep(
@@ -325,7 +324,7 @@ class _BarcodeIssueFixToolState extends State<BarcodeIssueFixTool> {
         true,
         'Producto: ${createdProduct.nombre}\n'
         'ID: ${createdProduct.idProducto}\n'
-        'Código asignado: ${testBarcode}\n'
+        'Código asignado: $testBarcode\n'
         'Código en respuesta: ${createdProduct.codigoDeBarra}'
       );
     } catch (e) {
@@ -379,7 +378,7 @@ class _BarcodeIssueFixToolState extends State<BarcodeIssueFixTool> {
       _updateLastStep(
         'Producto de prueba eliminado',
         true,
-        'Producto ID $_testProductId eliminado correctamente'
+        'Producto ID $_testProductId eliminado correctamente',
       );
     } catch (e) {
       _updateLastStep('Error eliminando producto de prueba', false, 'Error: $e\nPuede eliminarse manualmente');
@@ -420,7 +419,7 @@ class _BarcodeIssueFixToolState extends State<BarcodeIssueFixTool> {
     _updateLastStep(
       'Diagnóstico completado',
       !hasBackendIssue,
-      'Pasos exitosos: $successfulSteps/$totalSteps\n\n$recommendations'
+      'Pasos exitosos: $successfulSteps/$totalSteps\n\n$recommendations',
     );
   }
 
@@ -432,7 +431,7 @@ class _BarcodeIssueFixToolState extends State<BarcodeIssueFixTool> {
         isSuccess: isComplete,
         isError: false,
         details: '',
-      ));
+      ),);
     });
   }
 

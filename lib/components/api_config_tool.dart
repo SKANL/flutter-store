@@ -240,21 +240,21 @@ class _ApiConfigToolState extends State<ApiConfigTool> {
   Widget _buildInstructionsCard() {
     return Card(
       color: Colors.amber.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      child: const Padding(
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               '💡 Instrucciones',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            const Text('1. Asegúrate de que tu servidor API esté ejecutándose'),
-            const Text('2. Verifica que el firewall permita conexiones en el puerto especificado'),
-            const Text('3. Si usas un emulador Android, usa 10.0.2.2 para localhost'),
-            const Text('4. Si usas un dispositivo físico, usa la IP real de tu computadora'),
-            const Text('5. Prueba la conexión antes de guardar la configuración'),
+            SizedBox(height: 8),
+            Text('1. Asegúrate de que tu servidor API esté ejecutándose'),
+            Text('2. Verifica que el firewall permita conexiones en el puerto especificado'),
+            Text('3. Si usas un emulador Android, usa 10.0.2.2 para localhost'),
+            Text('4. Si usas un dispositivo físico, usa la IP real de tu computadora'),
+            Text('5. Prueba la conexión antes de guardar la configuración'),
           ],
         ),
       ),

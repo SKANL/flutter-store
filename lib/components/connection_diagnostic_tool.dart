@@ -48,21 +48,21 @@ class _ConnectionDiagnosticToolState extends State<ConnectionDiagnosticTool> {
   Widget _buildHeader() {
     return Card(
       color: Colors.blue.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      child: const Padding(
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               '🔍 Diagnóstico de Conectividad API',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            const Text('Esta herramienta verifica:'),
-            const Text('• Conectividad de red'),
-            const Text('• Estado del servidor API'),
-            const Text('• Disponibilidad de endpoints'),
-            const Text('• Configuración de IP/Puerto'),
+            SizedBox(height: 8),
+            Text('Esta herramienta verifica:'),
+            Text('• Conectividad de red'),
+            Text('• Estado del servidor API'),
+            Text('• Disponibilidad de endpoints'),
+            Text('• Configuración de IP/Puerto'),
           ],
         ),
       ),
@@ -217,7 +217,7 @@ class _ConnectionDiagnosticToolState extends State<ConnectionDiagnosticTool> {
           message: 'Conexión a internet disponible',
           details: 'IP: ${result[0].address}',
           duration: stopwatch.elapsed,
-        ));
+        ),);
       }
     } catch (e) {
       stopwatch.stop();
@@ -227,7 +227,7 @@ class _ConnectionDiagnosticToolState extends State<ConnectionDiagnosticTool> {
         message: 'Sin conexión a internet',
         details: 'Error: $e',
         duration: stopwatch.elapsed,
-      ));
+      ),);
     }
   }
 
@@ -252,7 +252,7 @@ class _ConnectionDiagnosticToolState extends State<ConnectionDiagnosticTool> {
           message: 'Servidor accesible',
           details: 'Status: ${response.statusCode}, Respuesta: ${response.body.length} chars',
           duration: stopwatch.elapsed,
-        ));
+        ),);
       } else {
         _addResult(DiagnosticResult(
           testName: '⚠️ Servidor API ($baseUrl)',
@@ -260,7 +260,7 @@ class _ConnectionDiagnosticToolState extends State<ConnectionDiagnosticTool> {
           message: 'Servidor responde con error',
           details: 'Status: ${response.statusCode}',
           duration: stopwatch.elapsed,
-        ));
+        ),);
       }
     } catch (e) {
       stopwatch.stop();
@@ -270,7 +270,7 @@ class _ConnectionDiagnosticToolState extends State<ConnectionDiagnosticTool> {
         message: 'No se pudo conectar',
         details: 'Error: $e',
         duration: stopwatch.elapsed,
-      ));
+      ),);
     }
   }
 
@@ -304,7 +304,7 @@ class _ConnectionDiagnosticToolState extends State<ConnectionDiagnosticTool> {
             message: 'Endpoint funcional',
             details: 'Datos: ${data is List ? data.length : 'Objeto'} items',
             duration: stopwatch.elapsed,
-          ));
+          ),);
         } else {
           _addResult(DiagnosticResult(
             testName: '🎯 Endpoint $endpoint',
@@ -312,7 +312,7 @@ class _ConnectionDiagnosticToolState extends State<ConnectionDiagnosticTool> {
             message: 'Error en endpoint',
             details: 'Status: ${response.statusCode}',
             duration: stopwatch.elapsed,
-          ));
+          ),);
         }
       } catch (e) {
         stopwatch.stop();
@@ -322,7 +322,7 @@ class _ConnectionDiagnosticToolState extends State<ConnectionDiagnosticTool> {
           message: 'Endpoint no accesible',
           details: 'Error: $e',
           duration: stopwatch.elapsed,
-        ));
+        ),);
       }
     }
   }
@@ -359,7 +359,7 @@ class _ConnectionDiagnosticToolState extends State<ConnectionDiagnosticTool> {
       success: hasWorkingServer && hasWorkingEndpoints,
       message: hasWorkingServer && hasWorkingEndpoints ? 'Sistema funcionando' : 'Acciones requeridas',
       details: recommendations,
-    ));
+    ),);
   }
 
   void _addResult(DiagnosticResult result) {
