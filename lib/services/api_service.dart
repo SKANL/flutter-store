@@ -26,6 +26,16 @@ class ApiService {
   // Pool de conexiones reutilizables para HTTP
   static final http.Client _httpClient = http.Client();
   
+  // Getters para acceso a configuración
+  static String get baseUrl => ApiConfig.baseUrl;
+  
+  // Método para actualizar la URL base
+  static void updateBaseUrl(String newBaseUrl) {
+    ApiConfig.updateBaseUrl(newBaseUrl);
+    // Limpiar cache cuando cambie la URL
+    clearCache();
+  }
+  
   // Métodos para limpiar cache selectivo
   static void clearCache() {
     _categoriasCache = null;

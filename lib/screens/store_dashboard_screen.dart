@@ -7,6 +7,8 @@ import 'package:store_manager/screens/store_register_sale_screen.dart';
 import '../components/bottom_navigation_bar.dart';
 import '../components/floating_add_button.dart';
 import '../components/barcode_diagnostic_tool.dart';
+import '../components/connection_diagnostic_tool.dart';
+import '../components/api_config_tool.dart';
 
 class StoreDashboardScreen extends StatefulWidget {
   const StoreDashboardScreen({super.key});
@@ -47,7 +49,39 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // Botón de diagnóstico (solo en modo debug)
+                // Botón de configuración API
+                FloatingActionButton.small(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const ApiConfigTool(),
+                      ),
+                    );
+                  },
+                  backgroundColor: Colors.indigo,
+                  foregroundColor: Colors.white,
+                  heroTag: 'api_config',
+                  tooltip: 'Configuración API',
+                  child: const Icon(Icons.settings, size: 18),
+                ),
+                const SizedBox(height: 8),
+                // Botón de diagnóstico de conexión
+                FloatingActionButton.small(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const ConnectionDiagnosticTool(),
+                      ),
+                    );
+                  },
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  heroTag: 'connection_diagnostic',
+                  tooltip: 'Diagnóstico de Conexión API',
+                  child: const Icon(Icons.wifi_find, size: 18),
+                ),
+                const SizedBox(height: 8),
+                // Botón de diagnóstico de códigos de barras
                 FloatingActionButton.small(
                   onPressed: () {
                     Navigator.of(context).push(
@@ -58,7 +92,7 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
                   },
                   backgroundColor: Colors.orange,
                   foregroundColor: Colors.white,
-                  heroTag: 'diagnostic',
+                  heroTag: 'barcode_diagnostic',
                   tooltip: 'Diagnóstico Códigos de Barras',
                   child: const Icon(Icons.bug_report, size: 18),
                 ),

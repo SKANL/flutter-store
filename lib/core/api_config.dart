@@ -1,7 +1,8 @@
 class ApiConfig {
   // URL base de tu API de C# - CONFIGURACIÓN PARA ANDROID
   // Android no puede usar localhost, necesita la IP local de la PC
-  static const String baseUrl = 'http://192.168.1.7:5041';
+  static const String _defaultBaseUrl = 'http://192.168.1.7:5041';
+  static String _currentBaseUrl = _defaultBaseUrl;
   
   // Configuraciones de timeout
   static const Duration timeout = Duration(seconds: 30);
@@ -24,10 +25,23 @@ class ApiConfig {
     return debug;
   }
   
-  // Obtiene la URL según el entorno
+  // Obtiene la URL actual (configurable dinámicamente)
   static String get currentBaseUrl {
-    return isDebug ? developmentUrl : productionUrl;
+    return _currentBaseUrl;
   }
+  
+  // Método para actualizar la URL base
+  static void updateBaseUrl(String newBaseUrl) {
+    _currentBaseUrl = newBaseUrl;
+  }
+  
+  // Método para restaurar la URL por defecto
+  static void resetToDefault() {
+    _currentBaseUrl = _defaultBaseUrl;
+  }
+  
+  // Getter para acceso desde otras clases
+  static String get baseUrl => currentBaseUrl;
 }
 
 class ApiEndpoints {
