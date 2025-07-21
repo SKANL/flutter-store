@@ -248,7 +248,9 @@ class _StoreAdvancedReportsScreenState extends State<StoreAdvancedReportsScreen>
                     children: [
                       Icon(Icons.check_circle, color: Colors.green),
                       SizedBox(width: 8),
-                      Text('¡Excelente! No hay productos con stock bajo.'),
+                      Expanded(
+                        child: Text('¡Excelente! No hay productos con stock bajo.'),
+                      ),
                     ],
                   ),
                 ),

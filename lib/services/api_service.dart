@@ -1005,13 +1005,20 @@ class ApiService {
       print('🛒 [VENTA] Enviando venta completa al servidor...');
       print('📄 [VENTA] JSON enviado: ${json.encode(nuevaVenta.toJson())}');
       
-      final response = await http
-          .post(
-            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.ventasWithDetails}'),
-            headers: _headers,
-            body: json.encode(nuevaVenta.toJson()),
-          )
-          .timeout(ApiConfig.timeout);
+      // Intentar primero con el endpoint optimizado, si falla usar el método legacy
+      http.Response response;
+      try {
+        response = await http
+            .post(
+              Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.ventasWithDetails}'),
+              headers: _headers,
+              body: json.encode(nuevaVenta.toJson()),
+            )
+            .timeout(ApiConfig.timeout);
+      } catch (e) {
+        print('⚠️ [VENTA] Endpoint withdetails no disponible, usando método legacy...');
+        return createVentaCompletaLegacy(detalles);
+      }
 
       print('🌐 [VENTA] Respuesta del servidor: ${response.statusCode}');
       
@@ -1021,6 +1028,9 @@ class ApiService {
         print('✅ [VENTA] Stock actualizado automáticamente por la API');
         print('🛒 [VENTA] === FIN PROCESO VENTA ===');
         return ventaCreada;
+      } else if (response.statusCode == 405) {
+        print('⚠️ [VENTA] Método no permitido (405), usando método legacy...');
+        return createVentaCompletaLegacy(detalles);
       }
       
       print('❌ [VENTA] Error del servidor: ${response.body}');
@@ -1032,9 +1042,11 @@ class ApiService {
     }
   }
 
-  /// Método legacy - mantener por compatibilidad (ya no se usa)
+  /// Método legacy - crear venta paso a paso (compatibilidad con APIs básicas)
   static Future<Venta> createVentaCompletaLegacy(List<DetalleVenta> detalles) async {
     try {
+      print('🔄 [LEGACY] Usando método de compatibilidad...');
+      
       // Validar que tenemos detalles
       if (detalles.isEmpty) {
         throw Exception('No se pueden crear ventas sin productos');
@@ -1042,8 +1054,8 @@ class ApiService {
       
       // Calcular el total
       final total = detalles.fold(0.0, (sum, detalle) => sum + detalle.subtotal);
-      print('🛒 [VENTA] Creando venta por total: \$${total.toStringAsFixed(2)}');
-      print('🛒 [VENTA] ${detalles.length} productos en el carrito');
+      print('🛒 [LEGACY] Creando venta por total: \$${total.toStringAsFixed(2)}');
+      print('🛒 [LEGACY] ${detalles.length} productos en el carrito');
       
       // Crear la venta
       final nuevaVenta = Venta(
@@ -1051,33 +1063,35 @@ class ApiService {
         total: total,
       );
       
-      print('🛒 [VENTA] Enviando venta al servidor...');
+      print('🛒 [LEGACY] Enviando venta al servidor...');
       final ventaCreada = await createVenta(nuevaVenta);
-      print('✅ [VENTA] Venta creada con ID: ${ventaCreada.idVenta}');
+      print('✅ [LEGACY] Venta creada con ID: ${ventaCreada.idVenta}');
       
       // Crear los detalles de la venta uno por uno
       final detallesCreados = <DetalleVenta>[];
       for (int i = 0; i < detalles.length; i++) {
         final detalle = detalles[i];
-        print('📦 [DETALLE] Creando detalle ${i + 1}/${detalles.length}: Producto ID ${detalle.idProducto}, Cantidad: ${detalle.cantidad}, Precio: \$${detalle.precioUnitario}');
+        print('📦 [LEGACY] Creando detalle ${i + 1}/${detalles.length}: Producto ID ${detalle.idProducto}, Cantidad: ${detalle.cantidad}, Precio: \$${detalle.precioUnitario}');
         
         final detalleConVenta = detalle.copyWith(idVenta: ventaCreada.idVenta);
         try {
           final detalleCreado = await createDetalleVenta(detalleConVenta);
           detallesCreados.add(detalleCreado);
-          print('✅ [DETALLE] Detalle ${i + 1} creado exitosamente');
+          print('✅ [LEGACY] Detalle ${i + 1} creado exitosamente');
         } catch (e) {
-          print('❌ [DETALLE] Error creando detalle ${i + 1}: $e');
-          print('📄 [DETALLE] Datos enviados: ${json.encode(detalleConVenta.toJson())}');
+          print('❌ [LEGACY] Error creando detalle ${i + 1}: $e');
+          print('📄 [LEGACY] Datos enviados: ${json.encode(detalleConVenta.toJson())}');
           throw Exception('Error creando detalle del producto ${detalle.nombreProducto ?? "ID: ${detalle.idProducto}"}: $e');
         }
       }
       
-      print('✅ [VENTA] Venta completa creada exitosamente con ${detallesCreados.length} detalles');
+      print('✅ [LEGACY] Venta completa creada exitosamente con ${detallesCreados.length} detalles');
+      print('🛒 [LEGACY] === FIN PROCESO VENTA ===');
+      
       // Retornar la venta completa con sus detalles
       return ventaCreada.copyWith(detalles: detallesCreados);
     } catch (e) {
-      print('❌ [VENTA] Error en createVentaCompleta: $e');
+      print('❌ [LEGACY] Error en createVentaCompletaLegacy: $e');
       throw _mapException(e);
     }
   }
