@@ -6,6 +6,7 @@ import 'package:store_manager/screens/store_advanced_reports_screen.dart';
 import 'package:store_manager/screens/store_register_sale_screen.dart';
 import '../components/bottom_navigation_bar.dart';
 import '../components/floating_add_button.dart';
+import '../components/barcode_diagnostic_tool.dart';
 
 class StoreDashboardScreen extends StatefulWidget {
   const StoreDashboardScreen({super.key});
@@ -42,28 +43,51 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
         },
       ),
       floatingActionButton: _currentIndex == 1 // Solo mostrar en inventario
-          ? FloatingAddButton(
-              onPressed: () async {
-                print('🔄 [NAV] Navegando a agregar producto desde dashboard...');
-                final result = await Navigator.of(context).push<bool>(
-                  MaterialPageRoute(
-                    builder: (context) => const StoreAddProductScreen(),
-                  ),
-                );
-                if (result == true && mounted) {
-                  print('✅ [NAV] Producto guardado desde dashboard, recargando...');
-                  // Aquí podrías recargar el inventario si es necesario
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Producto agregado exitosamente'),
-                        backgroundColor: Colors.green,
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Botón de diagnóstico (solo en modo debug)
+                FloatingActionButton.small(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const BarcodeDiagnosticTool(),
                       ),
                     );
-                  }
-                }
-              },
-              tooltip: 'Agregar Producto',
+                  },
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  heroTag: 'diagnostic',
+                  tooltip: 'Diagnóstico Códigos de Barras',
+                  child: const Icon(Icons.bug_report, size: 18),
+                ),
+                const SizedBox(height: 8),
+                // Botón principal de agregar producto
+                FloatingAddButton(
+                  onPressed: () async {
+                    print('🔄 [NAV] Navegando a agregar producto desde dashboard...');
+                    final result = await Navigator.of(context).push<bool>(
+                      MaterialPageRoute(
+                        builder: (context) => const StoreAddProductScreen(),
+                      ),
+                    );
+                    if (result == true && mounted) {
+                      print('✅ [NAV] Producto guardado desde dashboard, recargando...');
+                      // Aquí podrías recargar el inventario si es necesario
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Producto agregado exitosamente'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  tooltip: 'Agregar Producto',
+                ),
+              ],
             )
           : null,
     );

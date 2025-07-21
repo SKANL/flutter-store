@@ -1029,12 +1029,22 @@ class _StoreAddProductScreenState extends State<StoreAddProductScreen> {
     try {
       print('🔄 [SAVE] Iniciando guardado de producto...');
       
+      // 🔍 LOGGING DETALLADO - Verificar campo código de barras
+      print('🔍 [SCREEN] === DIAGNÓSTICO CÓDIGO DE BARRAS (SCREEN) ===');
+      print('🔍 [SCREEN] Texto en _barcodeController: "${_barcodeController.text}"');
+      print('🔍 [SCREEN] Texto después de trim(): "${_barcodeController.text.trim()}"');
+      print('🔍 [SCREEN] ¿Está vacío después de trim?: ${_barcodeController.text.trim().isEmpty}');
+      
+      final barcodeValue = _barcodeController.text.trim().isEmpty 
+          ? null 
+          : _barcodeController.text.trim();
+      print('🔍 [SCREEN] Valor final para codigoDeBarra: "$barcodeValue"');
+      print('🔍 [SCREEN] ============================================');
+
       final product = Product(
         idProducto: wasEditing ? widget.productToEdit!.idProducto : null,
         nombre: _nameController.text.trim(),
-        codigoDeBarra: _barcodeController.text.trim().isEmpty 
-            ? null 
-            : _barcodeController.text.trim(),
+        codigoDeBarra: barcodeValue,
         precioCosto: double.parse(_costPriceController.text.trim()),
         precioVenta: double.parse(_salePriceController.text.trim()),
         stockActual: int.parse(_stockController.text.trim()),

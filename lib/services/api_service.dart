@@ -387,16 +387,44 @@ class ApiService {
 
   static Future<Product> createProduct(Product product) async {
     try {
+      // 🔍 LOGGING DETALLADO - Verificar datos antes del envío
+      print('🔍 [API] === DIAGNÓSTICO CÓDIGO DE BARRAS ===');
+      print('🔍 [API] Producto a crear: ${product.nombre}');
+      print('🔍 [API] Código de barras en modelo: "${product.codigoDeBarra}"');
+      print('🔍 [API] ¿Código de barras es null?: ${product.codigoDeBarra == null}');
+      print('🔍 [API] ¿Código de barras está vacío?: ${product.codigoDeBarra?.isEmpty ?? true}');
+      
+      final jsonData = product.toJson();
+      print('🔍 [API] JSON a enviar: ${json.encode(jsonData)}');
+      print('🔍 [API] Campo codigoDeBarra en JSON: "${jsonData['codigoDeBarra']}"');
+      print('🔍 [API] =======================================');
+
       final response = await http
           .post(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.productos}'),
             headers: _headers,
-            body: json.encode(product.toJson()),
+            body: json.encode(jsonData),
           )
           .timeout(ApiConfig.timeout);
 
       if (response.statusCode == 201) {
-        final createdProduct = Product.fromJson(json.decode(response.body));
+        // 🔍 LOGGING DETALLADO - Verificar respuesta del backend
+        print('🔍 [API] === RESPUESTA DEL BACKEND ===');
+        print('🔍 [API] Status: ${response.statusCode}');
+        print('🔍 [API] Response body: ${response.body}');
+        
+        final responseData = json.decode(response.body);
+        print('🔍 [API] Código de barras en respuesta: "${responseData['codigoDeBarra']}"');
+        print('🔍 [API] ================================');
+
+        final createdProduct = Product.fromJson(responseData);
+        
+        // 🔍 LOGGING DETALLADO - Verificar producto creado
+        print('🔍 [API] === PRODUCTO CREADO ===');
+        print('🔍 [API] ID del producto: ${createdProduct.idProducto}');
+        print('🔍 [API] Nombre: ${createdProduct.nombre}');
+        print('🔍 [API] Código de barras en producto creado: "${createdProduct.codigoDeBarra}"');
+        print('🔍 [API] ===========================');
         
         // Si tiene fecha de caducidad, crear el registro de caducidad
         if (product.fechaCaducidad != null && createdProduct.idProducto != null) {
@@ -409,27 +437,51 @@ class ApiService {
         
         // Retornar producto enriquecido
         final enrichedProducts = await _enrichProducts([createdProduct]);
-        return enrichedProducts.isNotEmpty ? enrichedProducts.first : createdProduct;
+        final finalProduct = enrichedProducts.isNotEmpty ? enrichedProducts.first : createdProduct;
+        
+        // 🔍 LOGGING DETALLADO - Verificar producto final
+        print('🔍 [API] === PRODUCTO FINAL ===');
+        print('🔍 [API] Código de barras en producto final: "${finalProduct.codigoDeBarra}"');
+        print('🔍 [API] =======================');
+        
+        return finalProduct;
       }
       
       _handleHttpError(response);
       throw ServerException('Error al crear producto');
     } catch (e) {
+      print('❌ [API] Error en createProduct: $e');
       throw _mapException(e);
     }
   }
 
   static Future<Product> updateProduct(Product product) async {
     try {
+      // 🔍 LOGGING DETALLADO - Verificar datos antes del envío (UPDATE)
+      print('🔍 [API] === DIAGNÓSTICO CÓDIGO DE BARRAS (UPDATE) ===');
+      print('🔍 [API] Producto a actualizar: ${product.nombre} (ID: ${product.idProducto})');
+      print('🔍 [API] Código de barras en modelo: "${product.codigoDeBarra}"');
+      print('🔍 [API] ¿Código de barras es null?: ${product.codigoDeBarra == null}');
+      print('🔍 [API] ¿Código de barras está vacío?: ${product.codigoDeBarra?.isEmpty ?? true}');
+      
+      final jsonData = product.toJson();
+      print('🔍 [API] JSON a enviar: ${json.encode(jsonData)}');
+      print('🔍 [API] Campo codigoDeBarra en JSON: "${jsonData['codigoDeBarra']}"');
+      print('🔍 [API] =======================================');
+
       final response = await http
           .put(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.productoById(product.idProducto!)}'),
             headers: _headers,
-            body: json.encode(product.toJson()),
+            body: json.encode(jsonData),
           )
           .timeout(ApiConfig.timeout);
 
       if (response.statusCode == 204) {
+        print('🔍 [API] === RESPUESTA DEL BACKEND (UPDATE) ===');
+        print('🔍 [API] Status: ${response.statusCode} (No Content)');
+        print('🔍 [API] ========================================');
+
         // Actualizar caducidades si es necesario
         if (product.idProducto != null) {
           await _updateProductCaducidades(product.idProducto!, product.caducidades);
@@ -437,12 +489,19 @@ class ApiService {
         
         // Obtener el producto actualizado
         final updatedProduct = await getProductById(product.idProducto!);
+        
+        // 🔍 LOGGING DETALLADO - Verificar producto actualizado
+        print('🔍 [API] === PRODUCTO ACTUALIZADO ===');
+        print('🔍 [API] Código de barras en producto actualizado: "${updatedProduct?.codigoDeBarra}"');
+        print('🔍 [API] ===============================');
+        
         return updatedProduct ?? product;
       }
       
       _handleHttpError(response);
       throw ServerException('Error al actualizar producto');
     } catch (e) {
+      print('❌ [API] Error en updateProduct: $e');
       throw _mapException(e);
     }
   }
