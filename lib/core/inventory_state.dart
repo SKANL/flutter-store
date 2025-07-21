@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../models/product.dart';
 import '../models/categoria.dart';
 import '../models/proveedor.dart';
@@ -16,7 +17,24 @@ class InventoryState extends ChangeNotifier {
   String? _selectedCategory;
   bool _suppressNotifications = false; // Para evitar notificaciones durante inicialización
 
-  // Getters
+  // Timer para debouncing de búsqueda
+  Timer? _searchDebounceTimer;
+  static const Duration _searchDebounceDelay = Duration(milliseconds: 300);
+
+  // Cache optimizado para productos filtrados
+  List<Product>? _filteredProductsCache;
+  String? _lastSearchQuery;
+  String? _lastSelectedCategory;
+  
+  // Cache para estadísticas calculadas para evitar recálculos innecesarios
+  double? _totalInventoryValueCache;
+  double? _totalProfitCache;
+  List<Product>? _lowStockProductsCache;
+  List<Product>? _expiringProductsCache;
+  List<Product>? _expiredProductsCache;
+  List<String>? _categoriesCache;
+
+  // Getters básicos
   List<Product> get products => _products;
   List<Categoria> get categorias => _categorias;
   List<Proveedor> get proveedores => _proveedores;
@@ -25,12 +43,24 @@ class InventoryState extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   String? get selectedCategory => _selectedCategory;
 
-  // Cache para productos filtrados
-  List<Product>? _filteredProductsCache;
-  String? _lastSearchQuery;
-  String? _lastSelectedCategory;
+  @override
+  void dispose() {
+    _searchDebounceTimer?.cancel();
+    super.dispose();
+  }
 
-  // Productos filtrados con cache para mejorar rendimiento
+  // Limpiar todos los caches cuando los productos cambian
+  void _clearCalculatedCaches() {
+    _filteredProductsCache = null;
+    _totalInventoryValueCache = null;
+    _totalProfitCache = null;
+    _lowStockProductsCache = null;
+    _expiringProductsCache = null;
+    _expiredProductsCache = null;
+    _categoriesCache = null;
+  }
+
+  // Productos filtrados con cache optimizado para mejor rendimiento
   List<Product> get filteredProducts {
     // Verificar si el cache es válido
     if (_filteredProductsCache != null &&
@@ -39,17 +69,21 @@ class InventoryState extends ChangeNotifier {
       return _filteredProductsCache!;
     }
 
-    // Recalcular filtros
+    // Recalcular filtros solo cuando sea necesario
     List<Product> filtered = List.from(_products);
 
-    // Filtrar por búsqueda
+    // Filtrar por búsqueda con optimización
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
-      filtered = filtered.where((product) =>
-        product.nombre.toLowerCase().contains(query) ||
-        product.categoryName.toLowerCase().contains(query) ||
-        (product.codigoDeBarra?.toLowerCase().contains(query) ?? false),
-      ).toList();
+      filtered = filtered.where((product) {
+        final nombre = product.nombre.toLowerCase();
+        final categoria = product.categoryName.toLowerCase();
+        final codigo = product.codigoDeBarra?.toLowerCase();
+        
+        return nombre.contains(query) ||
+               categoria.contains(query) ||
+               (codigo != null && codigo.contains(query));
+      }).toList();
     }
 
     // Filtrar por categoría
@@ -67,51 +101,102 @@ class InventoryState extends ChangeNotifier {
     return filtered;
   }
 
-  // Obtiene todas las categorías únicas
+  // Obtiene todas las categorías únicas con cache
   List<String> get categories {
+    if (_categoriesCache != null) {
+      return _categoriesCache!;
+    }
+
     final categoriesSet = <String>{};
     for (final product in _products) {
       categoriesSet.add(product.categoryName);
     }
-    return categoriesSet.toList()..sort();
+    
+    _categoriesCache = categoriesSet.toList()..sort();
+    return _categoriesCache!;
   }
 
-  // Productos con stock bajo
+  // Productos con stock bajo con cache
   List<Product> get lowStockProducts {
-    return _products.where((product) => product.isLowStock).toList();
+    if (_lowStockProductsCache != null) {
+      return _lowStockProductsCache!;
+    }
+    
+    _lowStockProductsCache = _products.where((product) => product.isLowStock).toList();
+    return _lowStockProductsCache!;
   }
 
-  // Productos próximos a caducar
+  // Productos próximos a caducar con cache
   List<Product> get expiringProducts {
-    return _products.where((product) => 
+    if (_expiringProductsCache != null) {
+      return _expiringProductsCache!;
+    }
+    
+    _expiringProductsCache = _products.where((product) => 
       product.status == ProductStatus.expiringSoon,
     ).toList();
+    return _expiringProductsCache!;
   }
 
-  // Productos caducados
+  // Productos caducados con cache
   List<Product> get expiredProducts {
-    return _products.where((product) => 
+    if (_expiredProductsCache != null) {
+      return _expiredProductsCache!;
+    }
+    
+    _expiredProductsCache = _products.where((product) => 
       product.status == ProductStatus.expired,
     ).toList();
+    return _expiredProductsCache!;
   }
 
-  // Estadísticas calculadas
+  // Estadísticas calculadas con cache para evitar recálculos costosos
   double get totalInventoryValue {
-    return _products.fold(0.0, (sum, product) => sum + product.totalInventoryValue);
+    if (_totalInventoryValueCache != null) {
+      return _totalInventoryValueCache!;
+    }
+    
+    _totalInventoryValueCache = _products.fold(0.0, (sum, product) => (sum ?? 0.0) + product.totalInventoryValue);
+    return _totalInventoryValueCache!;
   }
 
   double get totalProfit {
-    return _products.fold(0.0, (sum, product) => sum + product.totalProfit);
+    if (_totalProfitCache != null) {
+      return _totalProfitCache!;
+    }
+    
+    _totalProfitCache = _products.fold(0.0, (sum, product) => (sum ?? 0.0) + product.totalProfit);
+    return _totalProfitCache!;
   }
 
   int get totalProducts => _products.length;
 
-  // Métodos para actualizar estado
+  // Métodos para actualizar estado con optimizaciones de rendimiento
   void setSearchQuery(String query) {
     if (_searchQuery != query) {
       _searchQuery = query;
+      
+      // Cancelar timer anterior si existe
+      _searchDebounceTimer?.cancel();
+      
+      // Aplicar debouncing para evitar filtrado excesivo durante escritura rápida
+      _searchDebounceTimer = Timer(_searchDebounceDelay, () {
+        _clearProductsCache();
+        if (!_suppressNotifications) {
+          notifyListeners();
+        }
+      });
+    }
+  }
+
+  // Método inmediato para casos donde no necesitamos debouncing
+  void setSearchQueryImmediate(String query) {
+    if (_searchQuery != query) {
+      _searchQuery = query;
       _clearProductsCache();
-      notifyListeners();
+      if (!_suppressNotifications) {
+        notifyListeners();
+      }
     }
   }
 
@@ -152,10 +237,12 @@ class InventoryState extends ChangeNotifier {
       
       if (products != null) {
         _products = products;
+        _clearCalculatedCaches(); // Limpiar caches al actualizar productos
         AppLogger.info('${products.length} productos cargados', 'INVENTORY');
       } else {
         AppLogger.warning('No se pudieron cargar productos', 'INVENTORY');
         _products = [];
+        _clearCalculatedCaches(); // También limpiar al vaciar
       }
     } catch (e, stackTrace) {
       AppLogger.error('Error cargando productos', 'INVENTORY', e, stackTrace);

@@ -10,26 +10,40 @@ import '../models/detalle_venta.dart';
 import '../core/api_config.dart';
 
 class ApiService {
-  // Cache estático para mejorar rendimiento
+  // Cache mejorado para rendimiento óptimo
   static List<Categoria>? _categoriasCache;
   static List<Proveedor>? _proveedoresCache;
+  static List<Product>? _productsCache;
+  
   static DateTime? _categoriasLastFetch;
   static DateTime? _proveedoresLastFetch;
+  static DateTime? _productsLastFetch;
   
-  // Duración del cache en minutos
-  static const int _cacheDurationMinutes = 5;
+  // Cache más agresivo para datos estables
+  static const int _categoriasAndProveedoresCacheMinutes = 15; // Datos estables más tiempo
+  static const int _productsCacheMinutes = 3; // Datos dinámicos menos tiempo  
   
-  // Métodos para limpiar cache cuando sea necesario
+  // Pool de conexiones reutilizables para HTTP
+  static final http.Client _httpClient = http.Client();
+  
+  // Métodos para limpiar cache selectivo
   static void clearCache() {
     _categoriasCache = null;
     _proveedoresCache = null;
+    _productsCache = null;
     _categoriasLastFetch = null;
     _proveedoresLastFetch = null;
+    _productsLastFetch = null;
   }
   
-  static bool _isCacheValid(DateTime? lastFetch) {
+  static void clearProductsCache() {
+    _productsCache = null;
+    _productsLastFetch = null;
+  }
+  
+  static bool _isCacheValid(DateTime? lastFetch, int cacheMinutes) {
     if (lastFetch == null) return false;
-    return DateTime.now().difference(lastFetch).inMinutes < _cacheDurationMinutes;
+    return DateTime.now().difference(lastFetch).inMinutes < cacheMinutes;
   }
   
   // Headers comunes
@@ -54,8 +68,8 @@ class ApiService {
   // --- CATEGORIAS ---
   
   static Future<List<Categoria>> getCategorias() async {
-    // Verificar cache primero
-    if (_isCacheValid(_categoriasLastFetch)) {
+    // Verificar cache primero con duración apropiada
+    if (_isCacheValid(_categoriasLastFetch, _categoriasAndProveedoresCacheMinutes)) {
       print('🧠 [CACHE] Usando categorías desde caché (${_categoriasCache?.length} items)');
       return _categoriasCache!;
     }
@@ -178,8 +192,8 @@ class ApiService {
   // --- PROVEEDORES ---
 
   static Future<List<Proveedor>> getProveedores() async {
-    // Verificar cache primero
-    if (_isCacheValid(_proveedoresLastFetch)) {
+    // Verificar cache primero con duración apropiada
+    if (_isCacheValid(_proveedoresLastFetch, _categoriasAndProveedoresCacheMinutes)) {
       print('🧠 [CACHE] Usando proveedores desde caché (${_proveedoresCache?.length} items)');
       return _proveedoresCache!;
     }
@@ -311,8 +325,14 @@ class ApiService {
   // --- PRODUCTOS ---
 
   static Future<List<Product>> getAllProducts() async {
+    // Verificar cache de productos primero
+    if (_isCacheValid(_productsLastFetch, _productsCacheMinutes)) {
+      print('🧠 [CACHE] Usando productos desde caché (${_productsCache?.length} items)');
+      return _productsCache!;
+    }
+
     try {
-      final response = await http
+      final response = await _httpClient
           .get(
             Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.productos}'), 
             headers: _headers,
@@ -324,7 +344,14 @@ class ApiService {
         final products = jsonList.map((json) => Product.fromJson(json)).toList();
         
         // Enriquecer productos con información de categorías y caducidades
-        return await _enrichProducts(products);
+        final enrichedProducts = await _enrichProducts(products);
+        
+        // Guardar en cache
+        _productsCache = enrichedProducts;
+        _productsLastFetch = DateTime.now();
+        print('🧠 [CACHE] Productos guardados en caché (${enrichedProducts.length} items)');
+        
+        return enrichedProducts;
       }
       
       _handleHttpError(response);

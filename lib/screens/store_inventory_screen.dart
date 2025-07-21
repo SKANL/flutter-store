@@ -16,9 +16,19 @@ class StoreInventoryScreen extends StatefulWidget {
 class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   
+  // Cache para widgets reutilizables
+  static const Key _refreshIndicatorKey = Key('inventory_refresh_indicator');
+  
   @override
   void initState() {
     super.initState();
+    
+    // Optimizar listener de búsqueda para usar debouncing del estado
+    _searchController.addListener(() {
+      final state = InventoryProvider.of(context);
+      state?.setSearchQuery(_searchController.text);
+    });
+    
     // Cargar productos al inicializar la pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = InventoryProvider.of(context);
@@ -132,15 +142,14 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
                               icon: const Icon(Icons.clear),
                               onPressed: () {
                                 _searchController.clear();
-                                final state = InventoryProvider.of(context);
-                                state?.setSearchQuery('');
+                                // El listener ya maneja el setSearchQuery automáticamente
                               },
                             )
                           : null,
                       filled: true,
                       fillColor: AppColors.backgroundComponent,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(8)),
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
@@ -148,10 +157,6 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
                         vertical: 12,
                       ),
                     ),
-                    onChanged: (value) {
-                      final state = InventoryProvider.of(context);
-                      state?.setSearchQuery(value);
-                    },
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -273,14 +278,18 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
     }
 
     return RefreshIndicator(
+      key: _refreshIndicatorKey,
       color: AppColors.primary,
       onRefresh: state.refreshProducts,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: products.length,
+        // Optimizaciones de rendimiento para ListView
+        cacheExtent: 500, // Cache más elementos fuera de pantalla
         itemBuilder: (context, index) {
           final product = products[index];
           return ProductCard(
+            key: ValueKey('product_${product.idProducto}'), // Key único para optimizar rebuilds
             product: product,
             onEdit: () => _editProduct(product),
             onDelete: () => _deleteProduct(product),

@@ -29,3 +29,11 @@ class AppColors {
   static const Color normalStock = Color(0xff4CAF50);
   static const Color highStock = Color(0xff2196F3);
 }
+
+// Clase alternativa para compatibilidad
+class AppColor {
+  static const Color colorPrimario = Color.fromARGB(255, 140, 146, 100);
+  static const Color colorSecundario = Color(0xffFFFFFF);
+  static const Color colorTexto = Color(0xff212121);
+  static const Color colorFondo = Color.fromARGB(255, 255, 246, 203);
+}
