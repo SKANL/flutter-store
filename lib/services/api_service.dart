@@ -1078,14 +1078,24 @@ class ApiService {
       
       // Búsqueda de respaldo usando getAllProducts()
       try {
+        print('🔍 [API] Iniciando búsqueda local por código de barras: $barcode');
         final products = await getAllProducts();
+        print('🔍 [API] Productos obtenidos para búsqueda: ${products.length}');
         
         // Buscar el producto que coincida con el código de barras
         for (final product in products) {
-          if (product.codigoDeBarra?.trim().toLowerCase() == barcode.trim().toLowerCase()) {
+          print('🔍 [API] Verificando producto: ${product.nombre} - código: "${product.codigoDeBarra}"');
+          
+          // Verificar que ambos valores no sean null/vacíos antes de comparar
+          if (product.codigoDeBarra != null && 
+              product.codigoDeBarra!.trim().isNotEmpty &&
+              product.codigoDeBarra!.trim().toLowerCase() == barcode.trim().toLowerCase()) {
+            print('✅ [API] ENCONTRADO! Producto: ${product.nombre} con código: ${product.codigoDeBarra}');
             return product;
           }
         }
+        
+        print('❌ [API] Ningún producto encontrado con código de barras válido: $barcode');
       } catch (e) {
         print('🔍 [API] Error en getAllProducts: $e');
       }

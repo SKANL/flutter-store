@@ -9,6 +9,7 @@ import '../components/floating_add_button.dart';
 import '../components/barcode_diagnostic_tool.dart';
 import '../components/connection_diagnostic_tool.dart';
 import '../components/api_config_tool.dart';
+import '../components/barcode_issue_fix_tool.dart';
 
 class StoreDashboardScreen extends StatefulWidget {
   const StoreDashboardScreen({super.key});
@@ -49,6 +50,22 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                // Botón de solución de códigos de barras
+                FloatingActionButton.small(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const BarcodeIssueFixTool(),
+                      ),
+                    );
+                  },
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  heroTag: 'barcode_fix',
+                  tooltip: 'Arreglar Códigos de Barras',
+                  child: const Icon(Icons.build_circle, size: 18),
+                ),
+                const SizedBox(height: 8),
                 // Botón de configuración API
                 FloatingActionButton.small(
                   onPressed: () {
