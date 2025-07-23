@@ -1395,3 +1395,6 @@ class DataFormatException extends ApiException {
 class UnknownException extends ApiException {
   UnknownException(super.message);
 }
+
+// Método utilitario para probar la conexión a la API
+// This method has been moved to ApiConfig to avoid circular dependencies
