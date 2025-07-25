@@ -72,6 +72,7 @@ class AppInitializer extends StatefulWidget {
 }
 
 class _AppInitializerState extends State<AppInitializer> {
+  bool _showConfigApiButton = false;
 
   @override
   void initState() {
@@ -506,41 +507,49 @@ class _AppInitializerState extends State<AppInitializer> {
     // Los datos se cargan en background sin bloquear UI
     return Stack(
       children: [
-        const StoreDashboardScreen(),
-        Positioned(
-          top: 0,
-          right: 0,
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _showApiConfigDialog,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.settings_ethernet, color: Colors.white, size: 16),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Config. API',
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                      ],
+        StoreDashboardScreen(
+          showConfigApiSwitch: _showConfigApiButton,
+          onConfigApiSwitchChanged: (value) {
+            setState(() {
+              _showConfigApiButton = value;
+            });
+          },
+        ),
+        if (_showConfigApiButton)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _showApiConfigDialog,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.settings_ethernet, color: Colors.white, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Config. API',
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
