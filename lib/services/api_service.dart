@@ -1069,9 +1069,18 @@ class ApiService {
         if (response.statusCode == 200) {
           final List<dynamic> jsonList = json.decode(response.body);
           if (jsonList.isNotEmpty) {
-            final product = Product.fromJson(jsonList.first);
-            final enrichedProducts = await _enrichProducts([product]);
-            return enrichedProducts.first;
+            // Filtrar por coincidencia exacta de código de barras
+            final filtered = jsonList.where((item) {
+              final rawCode = item['codigoDeBarra'];
+              if (rawCode == null) return false;
+              final code = rawCode.toString().trim().toLowerCase();
+              return code == barcode.trim().toLowerCase();
+            }).toList();
+            if (filtered.isNotEmpty) {
+              final product = Product.fromJson(filtered.first);
+              final enrichedProducts = await _enrichProducts([product]);
+              return enrichedProducts.first;
+            }
           }
         }
         // Si es 404, no es error, simplemente no existe
