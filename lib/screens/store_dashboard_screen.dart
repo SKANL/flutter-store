@@ -50,6 +50,20 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
       body: Stack(
         children: [
           _screens[_currentIndex],
+          // Botón flotante para acceder a categorías
+          if (_currentIndex == 0)
+            Positioned(
+              bottom: 24,
+              right: 24,
+              child: FloatingActionButton.extended(
+                heroTag: 'fab_categories',
+                icon: const Icon(Icons.category),
+                label: const Text('Categorías'),
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/categories');
+                },
+              ),
+            ),
           if (_currentIndex == 0 && widget.onConfigApiSwitchChanged != null)
             Positioned(
               top: 16,

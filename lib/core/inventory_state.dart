@@ -358,7 +358,7 @@ class InventoryState extends ChangeNotifier {
     }
   }
 
-  // --- MÉTODOS PARA PROVEEDORES ---
+  // --- MÉTODOS CRUD PARA PROVEEDORES ---
 
   Future<void> addProveedor(Proveedor proveedor) async {
     _setLoading(true);
@@ -406,6 +406,55 @@ class InventoryState extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _setError('Error al eliminar proveedor: ${e.toString()}');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // --- MÉTODOS CRUD PARA CATEGORÍAS ---
+  Future<void> createCategoria(Categoria categoria) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      final newCat = await ApiService.createCategoria(categoria);
+      _categorias.add(newCat);
+      notifyListeners();
+    } catch (e) {
+      _setError('Error al crear categoría: ${e.toString()}');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> updateCategoria(Categoria categoria) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      await ApiService.updateCategoria(categoria);
+      final idx = _categorias.indexWhere((c) => c.idCategoria == categoria.idCategoria);
+      if (idx != -1) {
+        _categorias[idx] = categoria;
+        notifyListeners();
+      }
+    } catch (e) {
+      _setError('Error al actualizar categoría: ${e.toString()}');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> deleteCategoria(int idCategoria) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      await ApiService.deleteCategoria(idCategoria);
+      _categorias.removeWhere((c) => c.idCategoria == idCategoria);
+      notifyListeners();
+    } catch (e) {
+      _setError('Error al eliminar categoría: ${e.toString()}');
       rethrow;
     } finally {
       _setLoading(false);

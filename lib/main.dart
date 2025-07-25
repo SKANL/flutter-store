@@ -4,6 +4,7 @@ import 'package:store_manager/core/inventory_state.dart';
 import 'package:store_manager/core/app_logger.dart';
 import 'package:store_manager/core/api_config.dart';
 import 'package:store_manager/screens/store_dashboard_screen.dart';
+import 'package:store_manager/screens/store_categories_screen.dart';
 import 'package:store_manager/services/api_service.dart';
 
 // Clave global para acceder al estado del AppInitializer desde cualquier lugar
@@ -52,6 +53,7 @@ class MainApp extends StatelessWidget {
         // Añadir rutas con nombre para navegación de respaldo
         routes: {
           '/dashboard': (context) => const StoreDashboardScreen(),
+                   '/categories': (context) => const StoreCategoriesScreen(),
         },
       ),
     );
