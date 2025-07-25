@@ -38,20 +38,24 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
   double get _total => _carritoItems.fold(0.0, (sum, item) => sum + item.subtotal);
 
   Future<void> _searchProductByBarcode(String barcode) async {
-    if (barcode.trim().isEmpty) return;
+    final trimmedBarcode = barcode.trim();
+    if (trimmedBarcode.isEmpty) return;
 
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _searchResults = [];
     });
 
     try {
-      final product = await ApiService.getProductByBarcode(barcode.trim());
+      // Siempre mostrar el código en el campo antes de buscar
+      if (_barcodeController.text != trimmedBarcode) {
+        _barcodeController.text = trimmedBarcode;
+      }
+      final product = await ApiService.getProductByBarcode(trimmedBarcode);
       if (product != null) {
         await _addProductToCart(product);
-        _barcodeController.clear();
-        
-        // Mensaje de éxito
+        // No limpiar el campo automáticamente, así el usuario ve el código escaneado
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -63,9 +67,8 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
         }
       } else {
         setState(() {
-          _errorMessage = 'No se encontró ningún producto con el código: $barcode';
+          _errorMessage = 'No se encontró ningún producto con el código: $trimmedBarcode';
         });
-        
         // Limpiar el mensaje de error después de 3 segundos
         Future.delayed(const Duration(seconds: 3), () {
           if (mounted) {
@@ -79,7 +82,6 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
       setState(() {
         _errorMessage = 'Error al buscar producto: ${e.toString()}';
       });
-      
       // Limpiar el mensaje de error después de 3 segundos
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) {
@@ -337,7 +339,7 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Búsqueda por código de barras
                 Row(
                   children: [
@@ -595,12 +597,7 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
       );
 
       if (result != null && result.isNotEmpty) {
-        // Actualizar el campo de texto y buscar el producto
-        setState(() {
-          _barcodeController.text = result;
-        });
-        
-        // Buscar automáticamente el producto
+        // Mostrar el código en el campo y buscar usando el valor escaneado
         await _searchProductByBarcode(result);
       }
     } catch (e) {
