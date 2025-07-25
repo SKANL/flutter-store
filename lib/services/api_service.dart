@@ -1,3 +1,4 @@
+// ...existing code...
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -10,6 +11,29 @@ import '../models/detalle_venta.dart';
 import '../core/api_config.dart';
 
 class ApiService {
+  /// Busca un producto por código de barras usando el endpoint RESTful /api/productos/barcode/{codigo}
+  static Future<Product?> getProductByBarcodeRestful(String barcode) async {
+    try {
+      // Construir la URL manualmente si el método no existe en ApiEndpoints
+      final url = '${ApiConfig.currentBaseUrl}/api/productos/barcode/${Uri.encodeComponent(barcode)}';
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _headers,
+      ).timeout(ApiConfig.timeout);
+      if (response.statusCode == 200) {
+        final product = Product.fromJson(json.decode(response.body));
+        final enrichedProducts = await _enrichProducts([product]);
+        return enrichedProducts.isNotEmpty ? enrichedProducts.first : product;
+      } else if (response.statusCode == 404) {
+        return null;
+      }
+      _handleHttpError(response);
+      return null;
+    } catch (e) {
+      print('❌ [API] Error obteniendo producto por código de barras RESTful: $e');
+      return null;
+    }
+  }
   // Cache mejorado para rendimiento óptimo
   static List<Categoria>? _categoriasCache;
   static List<Proveedor>? _proveedoresCache;
@@ -518,28 +542,37 @@ class ApiService {
 
   static Future<void> deleteProduct(int id) async {
     try {
-      // Primero eliminar las caducidades relacionadas
+      // Eliminar caducidades relacionadas, pero no fallar si alguna no se puede borrar
       final caducidades = await getProductoCaducidadesByProducto(id);
       for (final caducidad in caducidades) {
         if (caducidad.idProductoCaducidad != null) {
-          await deleteProductoCaducidad(caducidad.idProductoCaducidad!);
+          try {
+            await deleteProductoCaducidad(caducidad.idProductoCaducidad!);
+          } catch (e) {
+            print('⚠️ [API] Error eliminando caducidad ${caducidad.idProductoCaducidad}: $e');
+            // Continuar con el resto
+          }
         }
       }
-      
-      // Luego eliminar el producto
+
+      // Eliminar el producto principal
       final response = await http
           .delete(
-            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.productoById(id)}'), 
+            Uri.parse('${ApiConfig.currentBaseUrl}${ApiEndpoints.productoById(id)}'),
             headers: _headers,
           )
           .timeout(ApiConfig.timeout);
 
       if (response.statusCode == 204) {
+        print('✅ [API] Producto eliminado correctamente');
         return;
       }
-      
+
+      // Si el backend responde con error, mostrar mensaje claro
+      print('❌ [API] Error eliminando producto: ${response.statusCode} - ${response.body}');
       _handleHttpError(response);
     } catch (e) {
+      print('❌ [API] Error general en deleteProduct: $e');
       throw _mapException(e);
     }
   }

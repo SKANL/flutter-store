@@ -52,7 +52,8 @@ class _StoreRegisterSaleScreenState extends State<StoreRegisterSaleScreen> {
       if (_barcodeController.text != trimmedBarcode) {
         _barcodeController.text = trimmedBarcode;
       }
-      final product = await ApiService.getProductByBarcode(trimmedBarcode);
+      // CAMBIO: Usar el método RESTful
+      final product = await ApiService.getProductByBarcodeRestful(trimmedBarcode);
       if (product != null) {
         await _addProductToCart(product);
         // No limpiar el campo automáticamente, así el usuario ve el código escaneado

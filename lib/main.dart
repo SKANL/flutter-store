@@ -12,16 +12,16 @@ final GlobalKey<_AppInitializerState> appInitializerKey = GlobalKey<_AppInitiali
 Future<void> main() async {
   // Asegurarse de que Flutter esté inicializado
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Configurar el sistema de logging
   AppLogger.setLogLevel(LogLevel.debug);
   AppLogger.info('Iniciando Store Manager App', 'MAIN');
-  
+
   // Inicializar la configuración de la API antes de lanzar la aplicación
   // Intentará auto-detectar el entorno (emulador, dispositivo físico, localhost)
   await ApiConfig.configureForEnvironment();
   AppLogger.info('URL de API configurada: ${ApiConfig.baseUrl}', 'MAIN');
-  
+
   // Guardar la IP del dispositivo para diagnóstico
   final deviceIps = await ApiConfig.getDeviceIpAddresses();
   if (deviceIps.isNotEmpty) {

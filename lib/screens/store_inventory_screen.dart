@@ -14,6 +14,7 @@ class StoreInventoryScreen extends StatefulWidget {
 }
 
 class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
+  bool _isDeleting = false;
   final TextEditingController _searchController = TextEditingController();
   
   // Cache para widgets reutilizables
@@ -46,39 +47,46 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.background,
-      child: Column(
-        children: [
-          // Header con estadísticas y búsqueda
-          _buildHeader(),
-          
-          // Lista de productos
-          Expanded(
-            child: InventoryBuilder(
-              builder: (context, state) {
-                if (state.isLoading && state.products.isEmpty) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
-                  );
-                }
-
-                if (state.error != null) {
-                  return _buildErrorView(state);
-                }
-
-                if (state.products.isEmpty) {
-                  return _buildEmptyView(context);
-                }
-
-                return _buildProductsList(state);
-              },
+    return Stack(
+      children: [
+        Container(
+          color: AppColors.background,
+          child: Column(
+            children: [
+              // Header con estadísticas y búsqueda
+              _buildHeader(),
+              // Lista de productos
+              Expanded(
+                child: InventoryBuilder(
+                  builder: (context, state) {
+                    if (state.isLoading && state.products.isEmpty) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      );
+                    }
+                    if (state.error != null) {
+                      return _buildErrorView(state);
+                    }
+                    if (state.products.isEmpty) {
+                      return _buildEmptyView(context);
+                    }
+                    return _buildProductsList(state);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_isDeleting)
+          Container(
+            color: Colors.black.withOpacity(0.2),
+            child: const Center(
+              child: CircularProgressIndicator(),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -293,6 +301,7 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
             product: product,
             onEdit: () => _editProduct(product),
             onDelete: () => _deleteProduct(product),
+            showDeleteButton: true,
           );
         },
       ),
@@ -406,28 +415,48 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
       ),
     );
     if (result == true && mounted) {
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
       // Recargar lista e informar actualización exitosa
       final state = InventoryProvider.of(context);
-      state?.loadProducts();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Producto actualizado exitosamente'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      try {
+        await state?.loadProducts();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Producto actualizado exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al actualizar: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) Navigator.of(context).pop(); // Cierra el loader
       }
     }
   }
 
   void _deleteProduct(Product product) {
+    if (!mounted || !context.mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar Producto'),
-        content: Text(
-          '¿Estás seguro de que quieres eliminar "${product.nombre}"?',
-        ),
+        content: Text('¿Estás seguro de que quieres eliminar "${product.nombre}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -435,14 +464,17 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
           ),
           TextButton(
             onPressed: () async {
+              if (!mounted || !context.mounted) return;
               final navigator = Navigator.of(context);
               final messenger = ScaffoldMessenger.of(context);
               navigator.pop();
+              setState(() => _isDeleting = true);
               final state = InventoryProvider.of(context);
-              if (state != null && product.idProducto != null) {
-                try {
+              try {
+                if (state != null && product.idProducto != null) {
                   await state.deleteProduct(product.idProducto!);
-                  if (mounted) {
+                  await state.loadProducts();
+                  if (mounted && context.mounted) {
                     messenger.showSnackBar(
                       const SnackBar(
                         content: Text('Producto eliminado exitosamente'),
@@ -450,16 +482,18 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
                       ),
                     );
                   }
-                } catch (e) {
-                  if (mounted) {
-                    messenger.showSnackBar(
-                      SnackBar(
-                        content: Text('Error al eliminar: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
                 }
+              } catch (e) {
+                if (mounted && context.mounted) {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text('Error al eliminar: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } finally {
+                if (mounted) setState(() => _isDeleting = false);
               }
             },
             child: const Text(
