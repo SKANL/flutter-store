@@ -11,26 +11,23 @@ class StoreInventoryScreen extends StatefulWidget {
 
   @override
   State<StoreInventoryScreen> createState() => _StoreInventoryScreenState();
+// ...existing code...
 }
 
 class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
   bool _isDeleting = false;
   final TextEditingController _searchController = TextEditingController();
-  
+  int? _statRevealedIndex;
   // Cache para widgets reutilizables
   static const Key _refreshIndicatorKey = Key('inventory_refresh_indicator');
   
   @override
   void initState() {
     super.initState();
-    
-    // Optimizar listener de búsqueda para usar debouncing del estado
     _searchController.addListener(() {
       final state = InventoryProvider.of(context);
       state?.setSearchQuery(_searchController.text);
     });
-    
-    // Cargar productos al inicializar la pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = InventoryProvider.of(context);
       if (state != null && state.products.isEmpty) {
@@ -98,44 +95,64 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Estadísticas rápidas
             InventoryBuilder(
               builder: (context, state) {
-                return Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        'Productos',
-                        '${state.totalProducts}',
-                        Icons.inventory_2,
-                        AppColors.primary,
+                final stats = [
+                  {
+                    'title': 'Productos',
+                    'value': '${state.totalProducts}',
+                    'icon': Icons.inventory_2,
+                    'color': AppColors.primary,
+                  },
+                  {
+                    'title': 'Valor Total',
+                    'value': '\$${state.totalInventoryValue.toStringAsFixed(2)}',
+                    'icon': Icons.attach_money,
+                    'color': Colors.green,
+                  },
+                  {
+                    'title': 'Stock Bajo',
+                    'value': '${state.lowStockProducts.length}',
+                    'icon': Icons.warning,
+                    'color': state.lowStockProducts.isNotEmpty ? Colors.red : Colors.grey,
+                  },
+                ];
+                if (_statRevealedIndex != null) {
+                  final i = _statRevealedIndex!;
+                  return AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 350),
+                    child: SizedBox(
+                      key: ValueKey('stat-revealed-$i'),
+                      width: double.infinity,
+                      child: _buildRevealStatCard(
+                        stats[i]['title'] as String,
+                        stats[i]['value'] as String,
+                        stats[i]['icon'] as IconData,
+                        stats[i]['color'] as Color,
+                        i,
+                        isFullWidth: true,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        'Valor Total',
-                        '\$${state.totalInventoryValue.toStringAsFixed(2)}',
-                        Icons.attach_money,
-                        Colors.green,
+                  );
+                } else {
+                  return Row(
+                    children: List.generate(stats.length, (i) =>
+                      Expanded(
+                        child: _buildRevealStatCard(
+                          stats[i]['title'] as String,
+                          stats[i]['value'] as String,
+                          stats[i]['icon'] as IconData,
+                          stats[i]['color'] as Color,
+                          i,
+                          isFullWidth: false,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        'Stock Bajo',
-                        '${state.lowStockProducts.length}',
-                        Icons.warning,
-                        state.lowStockProducts.isNotEmpty ? Colors.red : Colors.grey,
-                      ),
-                    ),
-                  ],
-                );
+                    ).expand((w) => [w, if (w != stats.last) const SizedBox(width: 12)]).toList()..removeLast(),
+                  );
+                }
               },
             ),
-            
             const SizedBox(height: 16),
-            
             // Barra de búsqueda y filtros
             Row(
               children: [
@@ -150,7 +167,6 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
                               icon: const Icon(Icons.clear),
                               onPressed: () {
                                 _searchController.clear();
-                                // El listener ya maneja el setSearchQuery automáticamente
                               },
                             )
                           : null,
@@ -168,7 +184,6 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Botón de filtros por categoría
                 InventoryBuilder(
                   builder: (context, state) {
                     return PopupMenuButton<String?>(
@@ -179,16 +194,14 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
                       },
                       itemBuilder: (context) {
                         return [
-                          const PopupMenuItem<String?>(
+                          PopupMenuItem<String?>(
                             value: null,
-                            child: Text('Todas las categorías'),
+                            child: const Text('Todas las categorías'),
                           ),
-                          ...state.categories.map((category) {
-                            return PopupMenuItem<String>(
-                              value: category,
-                              child: Text(category),
-                            );
-                          }),
+                          ...state.categorias.map((cat) => PopupMenuItem<String?>(
+                            value: cat.nombre,
+                            child: Text(cat.nombre),
+                          )),
                         ];
                       },
                     );
@@ -224,33 +237,100 @@ class _StoreInventoryScreenState extends State<StoreInventoryScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: AppTextStyles.description.copyWith(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            title,
-            style: AppTextStyles.small.copyWith(
-              color: Colors.grey.shade600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+  Widget _buildRevealStatCard(String title, String value, IconData icon, Color color, int index, {required bool isFullWidth}) {
+    final isRevealed = _statRevealedIndex == index;
+    return Material(
+      elevation: 4,
+      borderRadius: BorderRadius.circular(18),
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        splashColor: color.withOpacity(0.10),
+        onTap: () {
+          setState(() {
+            _statRevealedIndex = isRevealed ? null : index;
+          });
+          if (!isRevealed) {
+            Future.delayed(const Duration(seconds: 3), () {
+              if (mounted && _statRevealedIndex == index) {
+                setState(() {
+                  _statRevealedIndex = null;
+                });
+              }
+            });
+          }
+        },
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 350),
+          transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+          child: isRevealed
+              ? Container(
+                  key: ValueKey('value$index'),
+                  width: isFullWidth ? double.infinity : null,
+                  padding: EdgeInsets.symmetric(vertical: isFullWidth ? 24 : 18, horizontal: isFullWidth ? 32 : 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.13),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                    border: Border.all(color: color.withOpacity(0.22), width: 1.5),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          value,
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w900,
+                            fontSize: isFullWidth ? 38 : 28,
+                            letterSpacing: 0.5,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: isFullWidth ? 24 : 18,
+                            letterSpacing: 0.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Container(
+                  key: ValueKey('icon$index'),
+                  padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.13),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                    border: Border.all(color: color.withOpacity(0.22), width: 1.5),
+                  ),
+                  child: Center(
+                    child: Icon(icon, color: color, size: 38),
+                  ),
+                ),
+        ),
       ),
     );
   }
